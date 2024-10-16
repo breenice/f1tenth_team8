@@ -2,6 +2,7 @@
 
 import rospy
 import math
+import numpy as np
 from sensor_msgs.msg import LaserScan
 from race.msg import pid_input
 
@@ -17,13 +18,27 @@ car_length = 0.50 # Traxxas Rally is 20 inches or 0.5 meters. Useful variable.
 pub = rospy.Publisher('error', pid_input, queue_size=10)
 
 
-def getRange(data,angle):
+def getRange(data, angle):
 	# data: single message from topic /scan
     # angle: between -30 to 210 degrees, where 0 degrees is directly to the right, and 90 degrees is directly in front
     # Outputs length in meters to object with angle in lidar scan field of view
     # Make sure to take care of NaNs etc.
-    #TODO: implement
-	return 0.0
+ 	#TODO: implement
+
+ 	if not -30 <= angle <= 210:
+ 		raise ValueError(f"Angle {angle} out of bounds")
+
+ 	# Convert to radians because LaserScan is in radians
+ 	angle_rad = math.radians(angle)
+        
+    index = int((angle_rad - data.angle_min) / data.angle_increment)
+    
+    range_value = data.ranges[index]
+    
+    if np.isnan(range_value):
+        return float('inf') # What should we do here ..?
+    
+    return range_value
 
 
 
@@ -50,5 +65,5 @@ if __name__ == '__main__':
 	print("Hokuyo LIDAR node started")
 	rospy.init_node('dist_finder',anonymous = True)
 	# TODO: Make sure you are subscribing to the correct car_x/scan topic on your racecar
-	rospy.Subscriber("/car_X/scan",LaserScan,callback)
+	rospy.Subscriber("/car_8/scan",LaserScan,callback)
 	rospy.spin()
