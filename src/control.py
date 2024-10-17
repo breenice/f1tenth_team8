@@ -44,7 +44,7 @@ def control(data):
 	# 1. Scale the error
 	error = E * data.error
 
-	# Bookeeping for integral value
+	# Bookkeeping for integral value
 	errors.append(error)
 	total_error += errors
 	if len(errors) > INTEGRAL_LENGTH:
