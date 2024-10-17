@@ -45,25 +45,30 @@ def getRange(data, angle):
 def callback(data):
 	global forward_projection
 
-	theta = 50 # you need to try different values for theta
-	a = getRange(data,theta) # obtain the ray distance for theta
-	b = getRange(data,0)	# obtain the ray distance for 0 degrees (i.e. directly to the right of the car)
-	swing = math.radians(theta)
+	thetas = [50] # you need to try different values for theta
+	# ^ can add diff values of theta later and calculate average or try diff values of theta
 
-	## Your code goes here to determine the projected error as per the alrorithm
-	# Compute Alpha, AB, and CD..and finally the error.
-	# TODO: implement
+	# testing multiple thetas
+	for theta in thetas:
+		a = getRange(data,theta) # obtain the ray distance for theta
+		b = getRange(data,0)	# obtain the ray distance for 0 degrees (i.e. directly to the right of the car)
+		swing = math.radians(theta)
+
+		## Your code goes here to determine the projected error as per the alrorithm
+		# Compute Alpha, AB, and CD..and finally the error.
+		# TODO: implement
 
 
-	# ----------------------------------------------
-	alpha = math.atan((a * math.cos(swing) - b) / (a * math.sin(swing)))
-	AB = b * math.cos(alpha)
+		# ----------------------------------------------
+		alpha = math.atan((a * math.cos(swing) - b) / (a * math.sin(swing)))
+		AB = b * math.cos(alpha)
 
-	CD = AB + (forward_projection + car_length) * math.sin(alpha) # forward projection is AC
-	# try w/ (forward_projection) * math.sin(alpha) if bad results
-	error = desired_distance  - CD
-	
-	# ----------------------------------------------
+		CD = AB + (forward_projection + car_length) * math.sin(alpha) # forward projection is AC
+		# try w/ (forward_projection) * math.sin(alpha) if bad results
+		error += desired_distance  - CD
+	error = error / len(thetas) # average error over all thetas
+		
+		# ----------------------------------------------
 	msg = pid_input()	# An empty msg is created of the type pid_input
 	# this is the error that you want to send to the PID for steering correction.
 	msg.pid_error = error
