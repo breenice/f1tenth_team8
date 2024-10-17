@@ -54,6 +54,16 @@ def callback(data):
 	# Compute Alpha, AB, and CD..and finally the error.
 	# TODO: implement
 
+
+	# ----------------------------------------------
+	alpha = math.atan((a * math.cos(swing) - b) / (a * math.sin(swing)))
+	AB = b * math.cos(alpha)
+
+	CD = AB + (forward_projection + car_length) * math.sin(alpha) # forward projection is AC
+	# try w/ (forward_projection) * math.sin(alpha) if bad results
+	error = desired_distance  - CD
+	
+	# ----------------------------------------------
 	msg = pid_input()	# An empty msg is created of the type pid_input
 	# this is the error that you want to send to the PID for steering correction.
 	msg.pid_error = error
