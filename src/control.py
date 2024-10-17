@@ -4,12 +4,19 @@ import rospy
 from race.msg import pid_input
 from ackermann_msgs.msg import AckermannDrive
 
+from collections import deque
+
 # PID Control Params
 kp = 0.0 #TODO
 kd = 0.0 #TODO
 ki = 0.0 #TODO
 servo_offset = 0.0	# zero correction offset in case servo is misaligned and has a bias in turning.
 prev_error = 0.0
+
+# Queue for integral term
+errors = deque()
+total_error = 0
+INTEGRAL_LENGTH = 10
 
 
 # This code can input desired velocity from the user.
@@ -22,15 +29,12 @@ prev_error = 0.0
 vel_input = 0.0	#TODO
 
 # Publisher for moving the car.
-# TODO: Use the coorect topic /car_x/offboard/command. The multiplexer listens to this topic
-command_pub = rospy.Publisher('/car_9/offboard/command', AckermannDrive, queue_size = 1)
+command_pub = rospy.Publisher('/car_8/offboard/command', AckermannDrive, queue_size = 1)
 
 def control(data):
 	global prev_error
 	global vel_input
-	global kp
-	global kd
-	global angle = 0.0
+	global kp, kd, ki
 
 	print("PID Control Node is Listening to error")
 
@@ -38,13 +42,27 @@ def control(data):
 	#TODO: Use kp, ki & kd to implement a PID controller
 
 	# 1. Scale the error
+	error = E * data.error
+
+	# Bookeeping for integral value
+	errors.append(error)
+	total_error += errors
+	if len(errors) > INTEGRAL_LENGTH:
+		total_error -= errors.popleft()
+
+
 	# 2. Apply the PID equation on error to compute steering
+	P = error
+	I = total_error
+	D = prev_error - error
+
+	angle = kp * P + ki * I + kd * D
 
 	# An empty AckermannDrive message is created. You will populate the steering_angle and the speed fields.
 	command = AckermannDrive()
 
 	# TODO: Make sure the steering value is within bounds [-100,100]
-	command.steering_angle = angle
+	command.steering_angle = max(min(100, angle), -100)
 
 	# TODO: Make sure the velocity is within bounds [0,100]
 	command.speed = vel_input
