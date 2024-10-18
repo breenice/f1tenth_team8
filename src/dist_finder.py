@@ -14,6 +14,8 @@ vel = 15 		# this vel variable is not really used here.
 error = 0.0		# initialize the error
 car_length = 0.50 # Traxxas Rally is 20 inches or 0.5 meters. Useful variable.
 
+LIDAR_MAX_RANGE = 4 # Maximum range of LIDAR scan
+
 # Handle to the publisher that will publish on the error topic, messages of the type 'pid_input'
 pub = rospy.Publisher('error', pid_input, queue_size=10)
 
@@ -36,7 +38,9 @@ def getRange(data, angle):
     range_value = data.ranges[index]
     
     if np.isnan(range_value):
-        return float('inf') # What should we do here ..?
+        range_value = LIDAR_MAX_RANGE
+
+    range_value = max(range_value, LIDAR_MAX_RANGE)
     
     return range_value
 
