@@ -14,8 +14,6 @@ vel = 15 		# this vel variable is not really used here.
 error = 0.0		# initialize the error
 car_length = 0.50 # Traxxas Rally is 20 inches or 0.5 meters. Useful variable.
 
-LIDAR_MAX_RANGE = 400 # Maximum range of LIDAR scan
-
 # Handle to the publisher that will publish on the error topic, messages of the type 'pid_input'
 pub = rospy.Publisher('error', pid_input, queue_size=10)
 
@@ -31,15 +29,14 @@ def getRange(data, angle):
     #     raise ValueError "Angle " + str(angle) + " out of bounds"
 
      # Convert to radians because LaserScan is in radians
-    angle_rad = math.radians(angle) 
+    angle_rad = math.radians(angle)
+
     angle_min = -(data.angle_min % math.pi)
-
-
-    print(angle_rad, angle_min, data.angle_max, data.angle_increment)
-
     index = int((angle_rad - angle_min) / data.angle_increment)
     
     range_value = data.ranges[index]
+
+    print(angle_rad, angle_min, data.angle_max, data.angle_increment)
 
     offset = 1
     while np.isnan(range_value):
@@ -51,8 +48,6 @@ def getRange(data, angle):
             offset += 1
         
         if offset > 5: break
-
-    # range_value = min(range_value, LIDAR_MAX_RANGE)
     
     return range_value
 
@@ -62,9 +57,7 @@ def callback(data):
     global forward_projection
 
     theta = 50 # you need to try different values for theta
-    # ^ can add diff values of theta later and calculate average or try diff values of theta
 
-    # testing multiple thetas
     a = getRange(data,theta) # obtain the ray distance for theta
     b = getRange(data,0)	# obtain the ray distance for 0 degrees (i.e. directly to the right of the car)
     swing = math.radians(theta)
@@ -85,7 +78,6 @@ def callback(data):
     print("alpha: " + str(alpha))
     print("AB: " + str(AB) + ", CD: " + str(CD))    
     print("Error: " + str(error))
-
         
     # ----------------------------------------------
 
