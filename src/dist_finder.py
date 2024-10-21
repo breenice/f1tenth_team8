@@ -10,7 +10,6 @@ from race.msg import pid_input
 angle_range = 240         # Hokuyo 4LX has 240 degrees FoV for scan
 forward_projection = 0.2  # distance (in m) that we project the car forward for correcting the error.
 desired_distance = 0.9    # desired distance from the wall (in m).
-desired_speed = 20        # desired cruising speed
 car_length = 0.50         # Traxxas Rally is 20 inches or 0.5 meters.
 
 prev_readings = {}
@@ -86,6 +85,7 @@ def callback(data):
     max_dist = 2.0   # meters
     min_speed = 15   # speed units
     max_speed = 25   # speed units
+    desired_speed = 20        # desired cruising speed
 
     if dist_ahead <= min_dist:
         desired_vel = min_speed
@@ -103,7 +103,6 @@ def callback(data):
 
     print("Velocity Error: " + str(velError))
     print("Steering Error (after averaging): " + str(steering_error))
-    
 
     # ----------------------------------------------
 
