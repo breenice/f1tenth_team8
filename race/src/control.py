@@ -7,9 +7,10 @@ from ackermann_msgs.msg import AckermannDrive
 from collections import deque
 
 # PID Control Params
-# kp = 0.0 #TODO
-# kd = 0.0 #TODO
-# ki = 0.0 #TODO
+kp = float(input("Enter kp value: "))
+kd = float(input("Enter ki value: "))
+ki = float(input("Enter kd value: "))
+vel_input = float(input("Enter desired velocity: "))
 servo_offset = 0.0	# zero correction offset in case servo is misaligned and has a bias in turning.
 prev_error = 0.0
 
@@ -26,7 +27,6 @@ INTEGRAL_LENGTH = 10
 # 25: Slow and steady
 # 35: Nice Autonomous Pace
 # > 40: Careful, what you do here. Only use this if your autonomous steering is very reliable.
-# vel_input = 0.0	#TODO
 
 # Publisher for moving the car.
 command_pub = rospy.Publisher('/car_8/offboard/command', AckermannDrive, queue_size = 1)

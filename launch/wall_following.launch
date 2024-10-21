@@ -1,7 +1,0 @@
-<launch>
-    
-    <node pkg="src" type="control.py" name="control" output="screen">
-    <node pkg="src" type="dist_finder.py" name="dist_finder" output="screen"/>
-    <node pkg="src" type="rviz_test.py" name="rviz_test" output="screen"/>
-  
-</launch>
