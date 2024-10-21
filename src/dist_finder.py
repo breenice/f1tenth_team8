@@ -118,3 +118,20 @@ if __name__ == '__main__':
     # Subscribe to the correct scan topic
     rospy.Subscriber("/car_8/scan", LaserScan, callback)
     rospy.spin()
+
+'''
+    # Adjust speed using if-else statement based on error magnitude
+    threshold_error = 5  # Adjust this threshold value as needed
+    high_speed = 25      # Speed when going straight
+    low_speed = 15       # Speed when about to turn
+
+    if abs(error) < threshold_error:
+        command.speed = high_speed
+        print("Going straight. Speeding up.")
+    else:
+        command.speed = low_speed
+        print("Approaching a turn. Slowing down.")
+
+    # Ensure speed is within bounds [0, 100]
+    command.speed = max(0, min(100, command.speed))
+'''
