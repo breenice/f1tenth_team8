@@ -77,6 +77,19 @@ def callback(data):
     print("alpha: " + str(alpha))
     print("AB: " + str(AB) + ", CD: " + str(CD))    
     print("Error: " + str(error))
+
+    dist_ahead = getRange(data, 90)
+    high_speed = 25
+    low_speed = 15
+    threshold_dist = .5
+    print("Distance ahead: " + str(dist_ahead) + " meters")
+
+    if dist_ahead < threshold_dist:
+        vel = low_speed
+        print("Path is clear. Speeding up.")
+    else:
+        vel = high_speed
+        print("Obstacle ahead or turning. Slowing down.")
         
     # ----------------------------------------------
 
