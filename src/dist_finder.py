@@ -8,8 +8,8 @@ from race.msg import pid_input
 
 # Some useful variable declarations.
 angle_range = 240	# Hokuyo 4LX has 240 degrees FoV for scan
-forward_projection = 1.5	# distance (in m) that we project the car forward for correcting the error. You have to adjust this.
-desired_distance = 0.9	# distance from the wall (in m). (defaults to right wall). You need to change this for the track
+forward_projection = 0.2	# distance (in m) that we project the car forward for correcting the error. You have to adjust this.
+desired_distance = 0.6 # distance from the wall (in m). (defaults to right wall). You need to change this for the track
 vel = 15 		# this vel variable is not really used here.
 error = 0.0		# initialize the error
 car_length = 0.50 # Traxxas Rally is 20 inches or 0.5 meters. Useful variable.
@@ -31,9 +31,13 @@ def getRange(data, angle):
     #     raise ValueError "Angle " + str(angle) + " out of bounds"
 
      # Convert to radians because LaserScan is in radians
-    angle_rad = math.radians(angle)
-        
-    index = int((angle_rad - data.angle_min) / data.angle_increment)
+    angle_rad = math.radians(angle) 
+    angle_min = -(data.angle_min % math.pi)
+
+
+    print(angle_rad, angle_min, data.angle_max, data.angle_increment)
+
+    index = int((angle_rad - angle_min) / data.angle_increment)
     
     range_value = data.ranges[index]
 
@@ -46,7 +50,7 @@ def getRange(data, angle):
             offset *= -1
             offset += 1
         
-        if offset > 15: break
+        if offset > 5: break
 
     # range_value = min(range_value, LIDAR_MAX_RANGE)
     
@@ -57,7 +61,7 @@ def getRange(data, angle):
 def callback(data):
     global forward_projection
 
-    theta = 30 # you need to try different values for theta
+    theta = 50 # you need to try different values for theta
     # ^ can add diff values of theta later and calculate average or try diff values of theta
 
     # testing multiple thetas
@@ -72,7 +76,7 @@ def callback(data):
     alpha = math.atan((a * math.cos(swing) - b)/ (a * math.sin(swing)))
     AB = b * math.cos(alpha)
 
-    CD = AB + (forward_projection + car_length) * math.sin(alpha) # forward projection is AC
+    CD = AB + (forward_projection) * math.sin(alpha) # forward projection is AC
     # try w/ (forward_projection + car_length) * math.sin(alpha) if bad results
     error = desired_distance - CD
 

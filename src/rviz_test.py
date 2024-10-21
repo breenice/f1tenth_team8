@@ -86,8 +86,8 @@ def callback(data):
 
     # Set the color
     arrow_marker.color.r = 0.0
-    arrow_marker.color.g = 0.0
-    arrow_marker.color.b = 1.0
+    arrow_marker.color.g = 0.2
+    arrow_marker.color.b = 0.6
     arrow_marker.color.a = 1.0
 
     arrow_marker_pub.publish(arrow_marker)
