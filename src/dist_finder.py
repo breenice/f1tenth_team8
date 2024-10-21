@@ -8,16 +8,17 @@ from race.msg import pid_input
 
 # Some useful variable declarations.
 angle_range = 240	# Hokuyo 4LX has 240 degrees FoV for scan
-forward_projection = 1	# distance (in m) that we project the car forward for correcting the error. You have to adjust this.
-desired_distance = 1.1 # distance from the wall (in m). (defaults to right wall). You need to change this for the track
+forward_projection = 0.2	# distance (in m) that we project the car forward for correcting the error. You have to adjust this.
+desired_distance = 0.9 # distance from the wall (in m). (defaults to right wall). You need to change this for the track
 vel = 15 		# this vel variable is not really used here.
 error = 0.0		# initialize the error
 car_length = 0.50 # Traxxas Rally is 20 inches or 0.5 meters. Useful variable.
 
 prev_readings = {}
 
-# Publisher that will publish on the 'error' topic messages of type 'pid_input'
+# Handle to the publisher that will publish on the error topic, messages of the type 'pid_input'
 pub = rospy.Publisher('error', pid_input, queue_size=10)
+
 
 def getRange(data, angle):
     # data: single message from topic /scan
@@ -47,13 +48,11 @@ def getRange(data, angle):
     return range_value
 
 
+
 def callback(data):
-    """
-    Callback function to process LIDAR data and publish errors for PID control.
-    """
     global forward_projection
 
-    thetas = [45, 60, 65, 70, 72, 75, 80]  # Angles to use for error calculation
+    thetas = [45, 60, 70, 75, 80] # you need to try different values for theta
 
     error = 0
     for theta in thetas:
@@ -72,80 +71,26 @@ def callback(data):
         # try w/ (forward_projection + car_length) * math.sin(alpha) if bad results
         error += desired_distance - CD
     error /= len(thetas)
-    # Get distance straight ahead (90 degrees)
-    dist_ahead = getRange(data, 90)
-    print("Distance ahead: " + str(dist_ahead) + " meters")
 
-    # Adjust speed using if-else statement based on error magnitude
-    threshold_error = 2  # Adjust this threshold value as needed
-    high_speed = 30      # Speed when going straight
-    low_speed = 15       # Speed when about to turn
-
-    if dist_ahead > threshold_error:
-        vel_error = high_speed
-        print("Going straight. Speeding up.")
-    else:
-        vel_error = low_speed
-        print("Approaching a turn. Slowing down.")
-
-    # Ensure speed is within bounds [0, 100]
-    vel_error = max(0, min(100, vel_error))
-
-
-    # Adjust velocity based on distance ahead using linear mapping
-    # min_dist = 0.5   # meters
-    # max_dist = 2.0   # meters
-    # min_speed = 15   # speed units
-    # max_speed = 40   # speed units
-    # desired_speed = 20        # desired cruising speed
-
-    # if dist_ahead <= min_dist:
-    #     desired_vel = min_speed
-    #     velError = desired_vel - desired_speed
-    #     print("Close to obstacle, set velocity error to achieve minimum speed.")
-    # elif dist_ahead >= max_dist:
-    #     desired_vel = max_speed
-    #     velError = desired_vel - desired_speed
-    #     print("Path is clear, set velocity error to achieve maximum speed.")
-    # else:
-    #     # Linear interpolation between min_speed and max_speed
-    #     desired_vel = min_speed + (dist_ahead - min_dist) * (max_speed - min_speed) / (max_dist - min_dist)
-    #     velError = desired_vel - desired_speed
-    #     print("Adjusting speed based on distance ahead. Desired Velocity: " + str(desired_vel))
-
-    # print("Velocity Error: " + str(velError))
-    # print("Steering Error (after averaging): " + str(error))
-
-    
-
+    print("Angle " + str(theta) + ": " + str(a))
+    print("Angle " + str(0) + ": " + str(b))
+    print("alpha: " + str(alpha))
+    print("AB: " + str(AB) + ", CD: " + str(CD))    
+    print("Error: " + str(error))
+        
     # ----------------------------------------------
 
-    # Create and publish the pid_input message
-    msg = pid_input()  # An empty msg is created of the type pid_input
-    msg.pid_error = error  # Steering error for PID
-    msg.pid_vel = vel_error          # Velocity error for PID
+    msg = pid_input()	# An empty msg is created of the type pid_input
+    # this is the error that you want to send to the PID for steering correction.
+    msg.pid_error = error
+    msg.pid_vel = vel		# velocity error can also be sent.
     pub.publish(msg)
+
 
 if __name__ == '__main__':
     print("Hokuyo LIDAR node started")
-    rospy.init_node('dist_finder', anonymous=True)
-    # Subscribe to the correct scan topic
-    rospy.Subscriber("/car_8/scan", LaserScan, callback)
+    rospy.init_node('dist_finder',anonymous = True)
+    # TODO: Make sure you are subscribing to the correct car_x/scan topic on your racecar
+    rospy.Subscriber("/car_8/scan",LaserScan,callback)
     rospy.spin()
 
-'''
-    # Adjust speed using if-else statement based on error magnitude
-    threshold_error = 5  # Adjust this threshold value as needed
-    high_speed = 25      # Speed when going straight
-    low_speed = 15       # Speed when about to turn
-
-    if abs(error) < threshold_error:
-        command.speed = high_speed
-        print("Going straight. Speeding up.")
-    else:
-        command.speed = low_speed
-        print("Approaching a turn. Slowing down.")
-
-    # Ensure speed is within bounds [0, 100]
-    command.speed = max(0, min(100, command.speed))
-'''
