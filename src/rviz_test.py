@@ -30,6 +30,7 @@ def callback(data):
     # rospy.loginfo(mid)
 
     steering_angle = data.steering_angle
+    steering_angle *= math.pi / 180
 
 
     # # SPHERE MARKER
@@ -88,15 +89,15 @@ def callback(data):
     arrow_marker.pose.orientation.z = quaternion[2]
     arrow_marker.pose.orientation.w = quaternion[3]
 
-    arrow_marker.scale.x = 0.1 # data.ranges[540]
+    arrow_marker.scale.x = 0.4 # data.ranges[540]
     arrow_marker.scale.y = 0.1
     arrow_marker.scale.z = 0.1
 
     # Set the color
-    arrow_marker.color.r = 0.0
+    arrow_marker.color.r = 0.1
     arrow_marker.color.g = 0.2
-    arrow_marker.color.b = 0.6
-    arrow_marker.color.a = 1.0
+    arrow_marker.color.b = 0.4
+    arrow_marker.color.a = 0.8
 
     arrow_marker_pub.publish(arrow_marker)
 
