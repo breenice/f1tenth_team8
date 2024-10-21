@@ -7,10 +7,9 @@ from ackermann_msgs.msg import AckermannDrive
 from collections import deque
 
 # PID Control Params
-kp = float(input("Enter kp value: "))
-ki = float(input("Enter ki value: "))
-kd = float(input("Enter kd value: "))
-vel_input = float(input("Enter desired velocity: "))
+# kp = 0.0 #TODO
+# kd = 0.0 #TODO
+# ki = 0.0 #TODO
 servo_offset = 0.0	# zero correction offset in case servo is misaligned and has a bias in turning.
 prev_error = 0.0
 
@@ -27,6 +26,7 @@ INTEGRAL_LENGTH = 10
 # 25: Slow and steady
 # 35: Nice Autonomous Pace
 # > 40: Careful, what you do here. Only use this if your autonomous steering is very reliable.
+# vel_input = 0.0	#TODO
 
 # Publisher for moving the car.
 command_pub = rospy.Publisher('/car_8/offboard/command', AckermannDrive, queue_size = 1)
@@ -69,7 +69,7 @@ def control(data):
 	command.steering_angle = max(min(100, angle), -100)
 
 	# TODO: Make sure the velocity is within bounds [0,100]
-	command.speed = vel_input
+	command.speed = data.pid_vel
 
 	# Move the car autonomously
 	command_pub.publish(command)
@@ -79,8 +79,8 @@ if __name__ == '__main__':
     # This code tempalte asks for the values for the gains from the user upon start, but you are free to set them as ROS parameters as well.
 	global kp, kd, ki
 	global vel_input
-	kp = 4.5 # input("Enter Kp Value: ")
-	kd = 0.5 # input("Enter Kd Value: ")
+	kp = 6 # input("Enter Kp Value: ")
+	kd = 4 # input("Enter Kd Value: ")
 	ki = 0 # input("Enter Ki Value: ")
 	vel_input = 15 # input("Enter desired velocity: ")
 	rospy.init_node('pid_controller', anonymous=True)
