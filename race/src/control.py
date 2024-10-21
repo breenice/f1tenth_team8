@@ -8,8 +8,8 @@ from collections import deque
 
 # PID Control Params
 kp = float(input("Enter kp value: "))
-kd = float(input("Enter ki value: "))
-ki = float(input("Enter kd value: "))
+ki = float(input("Enter ki value: "))
+kd = float(input("Enter kd value: "))
 vel_input = float(input("Enter desired velocity: "))
 servo_offset = 0.0	# zero correction offset in case servo is misaligned and has a bias in turning.
 prev_error = 0.0
