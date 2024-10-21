@@ -43,7 +43,7 @@ def control(data):
 	#TODO: Use kp, ki & kd to implement a PID controller
 
 	# 1. Scale the error
-	E = 1
+	E = 50
 	error = E * data.pid_error
 
 	# Bookkeeping for integral value
@@ -58,7 +58,7 @@ def control(data):
 	I = total_error
 	D = prev_error - error
 
-	angle = kp * P # + ki * I + kd * D
+	angle = kp * P + kd * D # + ki * I + kd * D
 
 	# An empty AckermannDrive message is created. You will populate the steering_angle and the speed fields.
 	command = AckermannDrive()
@@ -79,8 +79,8 @@ if __name__ == '__main__':
     # This code tempalte asks for the values for the gains from the user upon start, but you are free to set them as ROS parameters as well.
 	global kp, kd, ki
 	global vel_input
-	kp = 80 # input("Enter Kp Value: ")
-	kd = 0 # input("Enter Kd Value: ")
+	kp = 4.5 # input("Enter Kp Value: ")
+	kd = 0.5 # input("Enter Kd Value: ")
 	ki = 0 # input("Enter Ki Value: ")
 	vel_input = 15 # input("Enter desired velocity: ")
 	rospy.init_node('pid_controller', anonymous=True)

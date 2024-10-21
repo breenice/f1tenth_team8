@@ -9,10 +9,12 @@ from race.msg import pid_input
 # Some useful variable declarations.
 angle_range = 240	# Hokuyo 4LX has 240 degrees FoV for scan
 forward_projection = 0.2	# distance (in m) that we project the car forward for correcting the error. You have to adjust this.
-desired_distance = 0.6 # distance from the wall (in m). (defaults to right wall). You need to change this for the track
+desired_distance = 0.9 # distance from the wall (in m). (defaults to right wall). You need to change this for the track
 vel = 15 		# this vel variable is not really used here.
 error = 0.0		# initialize the error
 car_length = 0.50 # Traxxas Rally is 20 inches or 0.5 meters. Useful variable.
+
+prev_readings = {}
 
 # Handle to the publisher that will publish on the error topic, messages of the type 'pid_input'
 pub = rospy.Publisher('error', pid_input, queue_size=10)
@@ -38,16 +40,10 @@ def getRange(data, angle):
 
     print(angle_rad, angle_min, data.angle_max, data.angle_increment)
 
-    offset = 1
-    while np.isnan(range_value):
-        range_value = data.ranges[index + offset]
-        if offset > 0:
-            offset *= -1
-        else:
-            offset *= -1
-            offset += 1
-        
-        if offset > 5: break
+    if np.isnan(range_value):
+        range_value = prev_readings.get(angle, 2)
+    else:
+        prev_readings[angle] = range_value
     
     return range_value
 
@@ -56,22 +52,25 @@ def getRange(data, angle):
 def callback(data):
     global forward_projection
 
-    theta = 50 # you need to try different values for theta
+    thetas = [45, 60, 70, 75, 80] # you need to try different values for theta
 
-    a = getRange(data,theta) # obtain the ray distance for theta
-    b = getRange(data,0)	# obtain the ray distance for 0 degrees (i.e. directly to the right of the car)
-    swing = math.radians(theta)
+    error = 0
+    for theta in thetas:
+        a = getRange(data,theta) # obtain the ray distance for theta
+        b = getRange(data,0)	# obtain the ray distance for 0 degrees (i.e. directly to the right of the car)
+        swing = math.radians(theta)
 
-    # ----------------------------------------------
-    
-    ## Your code goes here to determine the projected error as per the alrorithm
-    # Compute Alpha, AB, and CD..and finally the error.
-    alpha = math.atan((a * math.cos(swing) - b)/ (a * math.sin(swing)))
-    AB = b * math.cos(alpha)
+        # ----------------------------------------------
+        
+        ## Your code goes here to determine the projected error as per the alrorithm
+        # Compute Alpha, AB, and CD..and finally the error.
+        alpha = math.atan((a * math.cos(swing) - b)/ (a * math.sin(swing)))
+        AB = b * math.cos(alpha)
 
-    CD = AB + (forward_projection) * math.sin(alpha) # forward projection is AC
-    # try w/ (forward_projection + car_length) * math.sin(alpha) if bad results
-    error = desired_distance - CD
+        CD = AB + (forward_projection) * math.sin(alpha) # forward projection is AC
+        # try w/ (forward_projection + car_length) * math.sin(alpha) if bad results
+        error += desired_distance - CD
+    error /= len(thetas)
 
     print("Angle " + str(theta) + ": " + str(a))
     print("Angle " + str(0) + ": " + str(b))
