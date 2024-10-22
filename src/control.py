@@ -60,18 +60,26 @@ def control(data):
 
 	angle = kp * P + kd * D # + ki * I + kd * D
 
+
+	vel_error = data.pid_vel
+	kp_vel = 12
+
+	speed = kp_vel * vel_error
+	speed = max(min(50, speed), 0)
+
+
 	# An empty AckermannDrive message is created. You will populate the steering_angle and the speed fields.
 	command = AckermannDrive()
 
 	# TODO: Make sure the steering value is within bounds [-100,100]
 	print("Error: " + str(data.pid_error))
 	print("Steering Angle: " + str(angle))
+	print("Vel Error: " + str(vel_error))
+	print("Vel: " + str(speed))
 	command.steering_angle = max(min(100, angle), -100)
 
 	# TODO: Make sure the velocity is within bounds [0,100]
-	# vel_error = max(0, min(100, vel_error))
-
-	command.speed = vel_input
+	command.speed = speed
 
 	# Move the car autonomously
 	command_pub.publish(command)
@@ -82,12 +90,10 @@ if __name__ == '__main__':
 	global kp, kd, ki
 	global vel_input
 	kp = 6 # input("Enter Kp Value: ")
-	kd = 1 # input("Enter Kd Value: ")
+	kd = 4.5 # input("Enter Kd Value: ")
 	ki = 0 # input("Enter Ki Value: ")
-	vel_input = 20 # input("Enter desired velocity: ")
+	vel_input = 15 # input("Enter desired velocity: ")
 	rospy.init_node('pid_controller', anonymous=True)
     # subscribe to the error topic
 	rospy.Subscriber("error", pid_input, control)
 	rospy.spin()
-
-
