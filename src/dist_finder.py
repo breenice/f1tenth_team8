@@ -77,6 +77,16 @@ def callback(data):
     print("alpha: " + str(alpha))
     print("AB: " + str(AB) + ", CD: " + str(CD))    
     print("Error: " + str(error))
+
+    forward_dist = getRange(data, 90)
+    forward_threshold = 2
+    max_speed = 20
+    min_speed = 5
+    if forward_dist > forward_threshold:
+        vel = max_speed
+    else:
+        vel = min_speed
+
         
     # ----------------------------------------------
 
