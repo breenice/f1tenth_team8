@@ -82,7 +82,7 @@ if __name__ == '__main__':
 	global kp, kd, ki
 	global vel_input
 	kp = 6 # input("Enter Kp Value: ")
-	kd = 4 # input("Enter Kd Value: ")
+	kd = 1 # input("Enter Kd Value: ")
 	ki = 0 # input("Enter Ki Value: ")
 	vel_input = 15 # input("Enter desired velocity: ")
 	rospy.init_node('pid_controller', anonymous=True)
