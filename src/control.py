@@ -81,10 +81,10 @@ if __name__ == '__main__':
     # This code tempalte asks for the values for the gains from the user upon start, but you are free to set them as ROS parameters as well.
 	global kp, kd, ki
 	global vel_input
-	kp = 9 # input("Enter Kp Value: ")
+	kp = 6 # input("Enter Kp Value: ")
 	kd = 1 # input("Enter Kd Value: ")
 	ki = 0 # input("Enter Ki Value: ")
-	vel_input = 40 # input("Enter desired velocity: ")
+	vel_input = 20 # input("Enter desired velocity: ")
 	rospy.init_node('pid_controller', anonymous=True)
     # subscribe to the error topic
 	rospy.Subscriber("error", pid_input, control)
