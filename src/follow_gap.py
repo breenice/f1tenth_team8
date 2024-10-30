@@ -129,6 +129,7 @@ def dynamic_velocity(steering_angle):
     # if turn is sharp (> 30 degrees) then slow down, if not keep default speed 
     if abs(steering_angle) > math.radians(30):
         return 5.0
+    #    return TURN_SPEED  # if the turn are too sharp
     else:
         return DEFAULT_VELOCITY 
 
@@ -148,5 +149,6 @@ if __name__=='__main__':
     init ros node and keep running 
     """
     rospy.init_node('follow_gap', anonymous=True)
+    #rospy.Subscriber('/car_8/scan', LaserScan, lidar_callback)
     rospy.spin()
     
