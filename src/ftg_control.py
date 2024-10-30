@@ -18,23 +18,6 @@ from src.gap_finder import GapFinder
 # Step 6: Publish the AckermannDrive message with dynamic speed control
 
 
-# def __init__(self):
-#     # topics 
-#     lidar_topic = '/car_8/scan'
-#     drive_topic = '/car_8/offboard/command'
-
-#     # parameters 
-#     self.safety_radius = 0.5 
-#     self.gap_detection_threshold = 0.1 
-#     self.max_lidar_distance = 10.0 
-#     self.velocity = 15
-#     self.turn_speed = 5.0
-
-
-#     # ROS publisher and subscriber
-#     self.drive_pub = rospy.Publisher(drive_topic, AckermannDrive, queue_size=10)
-#     rospy.Subscriber(lidar_topic, LaserScan, self.lidar_callback)
-
 # parameters 
 SAFETY_RADIUS = 0.5 
 GAP_DETECTION_THRESHOLD = 0.1  
@@ -81,6 +64,7 @@ class FTGControl:
         # publish
         self.publish_drive(steering_angle)
 
+    # TODO: This probably needs tuning
     def get_steering_angle(self, best_point, len_ranges, angle_inc):
         return (best_point - len_ranges // 2) * angle_inc
 

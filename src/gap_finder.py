@@ -43,7 +43,7 @@ def find_widest_gap(ranges):
 def filter_gaps(gaps, ranges):
     return [gap for gap in gaps if len(gap) * ranges[0] > GAP_DETECTION_THRESHOLD]
 
-
+# TODO: We should also consider other ways to choosing gaps/choosing point in gap
 class GapFinder:
     def __init__(self, gap_selection="deepest", point_selection="middle"):
         gap_selection_functions = {
