@@ -6,16 +6,11 @@ import math
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDrive
 
-from src.disparity_extension import DisparityExtender
-from src.gap_finder import GapFinder
+from disparity_extension import DisparityExtender
+#import disparity_extension 
+from gap_finder import GapFinder
+#import gap_finder
 
-### Notes from lecture - can delete later 
-# Step 1: Convert LIDAR data to a numpy array and handle NaNs
-# Step 2: Identify disparities 
-# Step 3: Apply safety bubble 
-# Step 4: Filter the valid front-facing data (-90 to +90 degrees)
-# Step 5: Calculate the steering angle towards the gap’s center
-# Step 6: Publish the AckermannDrive message with dynamic speed control
 
 
 # parameters 
