@@ -2,6 +2,7 @@ import numpy as np
 import rospy
 
 GAP_DETECTION_THRESHOLD = 10
+GAP_TOO_CLOSE_THRESHOLD = 2
 
 
 def find_middle_point(start_i, end_i, ranges):
@@ -26,20 +27,10 @@ def find_widest_gap(ranges):
     # create a mask for free space points (non-zero values)
     free_space = ranges > 1
     # split gaps
-    gaps = np.split(np.arange(len(ranges)), np.where(np.diff(free_space) != 0)[0] + 1)
-    # threshold = -1
-    # gap_size = 5
-    # deepest_gap = -1
-    # curr_gap_size = 0
-    # gaps = {} # gap_size: (start index, end index)
-    # in_gap = False
-    # for indice in range(0, len(ranges)):
-        
-    #     if ranges[indice] > threshold:
+    # gaps = np.split(np.arange(len(ranges)), np.where(np.diff(free_space) != 0)[0] + 1)
 
-    #         curr_gap_size += 1
-    #     else:
-
+    too_close = np.where(ranges < GAP_TOO_CLOSE_THRESHOLD)[0]
+    gaps = np.split(np.arange(len(ranges)), too_close)
         
 
     # filter out small gaps based on threshold
@@ -79,7 +70,11 @@ class GapFinder:
         return self.point_selection(start_i, end_i, ranges)
 
     def get_point_to_go_to(self, ranges):
-        print("Length: " + str(len(ranges)))
         start_i, end_i = self.get_gap(ranges)
+        best_point = self.get_point(start_i, end_i, ranges)
+
+        print("Length: " + str(len(ranges)))
         print("Gap: " + str((start_i, end_i)))
-        return self.get_point(start_i, end_i, ranges)
+        print("Best Point: " + str(best_point))
+
+        return best_point

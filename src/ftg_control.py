@@ -17,7 +17,7 @@ from gap_finder import GapFinder
 SAFETY_RADIUS = 0.5 
 GAP_DETECTION_THRESHOLD = 0.1  
 MAX_LIDAR_DISTANCE = 10.0 
-DEFAULT_VELOCITY = 15.0
+DEFAULT_VELOCITY = 20.0
 TURN_SPEED = 5.0 
 
 
@@ -46,7 +46,7 @@ class FTGControl:
         # apply safety bubble around closest obstacle
         # TODO: FTG Tweak 2: Disparity Extension should apply to every disparity, not just the closest point
         closest_idx = np.argmin(ranges)  # index of closest point
-        self.disparity_extender.safety_bubble(ranges, closest_idx, data.angle_increment)
+        # self.disparity_extender.safety_bubble(ranges, closest_idx, data.angle_increment)
 
         # find largest gap and select the best point from that gap
         # start_i, end_i = self.gap_finder.get_gap(ranges)
@@ -54,14 +54,23 @@ class FTGControl:
         best_point = self.gap_finder.get_point_to_go_to(ranges) # This does the same as above, but in one line
 
         # calculate steering angle towards best point
-        steering_angle = self.get_steering_angle(best_point, len(ranges), data.angle_increment)
+        steering_angle = self.get_steering_angle(best_point, data)
 
         # publish
         self.publish_drive(steering_angle)
 
     # TODO: This probably needs tuning
-    def get_steering_angle(self, best_point, len_ranges, angle_inc):
-        return (best_point - len_ranges // 2) * angle_inc
+    def get_steering_angle(self, best_point, data):
+        steering_direction = self.get_angle_of_lidar_idx(best_point, data)
+        steering_offset = steering_direction - 90
+        steering_angle = steering_offset * 2
+        return steering_angle
+    
+    def get_angle_of_lidar_idx(self, idx, data):
+        angle_min = -(data.angle_min % math.pi)
+        angle = idx * data.angle_increment + angle_min
+        return math.degrees(angle)
+
 
     def publish_drive(self, steering_angle):
         """
@@ -69,8 +78,8 @@ class FTGControl:
         """
         # create a new AckermannDrive message
         command = AckermannDrive()
-        # clamp steering angle between [-90, 90] degrees
-        command.steering_angle = max(min(steering_angle, math.radians(90)), math.radians(-90))
+        # clamp steering angle between [-100, 100] degrees
+        command.steering_angle = min(max(steering_angle, -100), 100)
         # set speed based on steering angle
         command.speed = self.dynamic_velocity(steering_angle)
         # publish drive command
@@ -82,7 +91,7 @@ class FTGControl:
         """
         # if turn is sharp (> 30 degrees) then slow down, if not keep default speed
         if abs(steering_angle) > math.radians(30):
-            return 5.0
+            return 15.0
         #    return TURN_SPEED  # if the turn are too sharp
         else:
             return DEFAULT_VELOCITY
