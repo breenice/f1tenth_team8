@@ -29,6 +29,18 @@ class FTGControl:
         self.disparity_extender = DisparityExtender(safety_radius=SAFETY_RADIUS)
         self.gap_finder = GapFinder()
 
+    # def preprocess_lidar(self, ranges):
+    #     """
+    #     preprocess LIDAR data by capping max range and handling NaNs
+    #     """
+    #     processed_ranges = []
+    #     for r in ranges:
+    #         if math.isnan(r) or r > MAX_LIDAR_DISTANCE:
+    #             processed_ranges.append(MAX_LIDAR_DISTANCE)
+    #         else:
+    #             processed_ranges.append(r)
+    #     return processed_ranges
+    
     def lidar_callback(self, data):
         """
         callback function to process LIDAR data
@@ -40,6 +52,10 @@ class FTGControl:
         ranges = np.array(data.ranges)
         # TODO: We can also try linearly interpolating NaNs instead of setting to max distance
         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
+
+        # if we dont want to use numpy?
+        # ranges = self.preprocess_lidar(list(data.ranges))
+
 
         # TODO: FTG Tweak 4: Set a maximum distance for the LIDAR sensor (2m or 3m)
 
@@ -67,6 +83,7 @@ class FTGControl:
         return steering_angle
     
     def get_angle_of_lidar_idx(self, idx, data):
+        # angle_min = data.angle_min
         angle_min = -(data.angle_min % math.pi)
         angle = idx * data.angle_increment + angle_min
         return math.degrees(angle)
