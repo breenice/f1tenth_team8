@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class DisparityExtender:
     def __init__(self, safety_radius=10, max_range=3):
         self._safety_radius = safety_radius
@@ -5,19 +8,21 @@ class DisparityExtender:
 
     def preprocess_lidar(self, ranges):
         # just to make sure all ranges capped to max
-        return [min(r, self._max_range) if r > 0 else self._max_range for r in ranges]
+        return np.clip(ranges, 0, self._max_range)
 
-    def safety_bubble(self, ranges, angle_increment):
+    def safety_bubble(self, original_ranges, angle_increment):
         """
         apply a safety bubble around all obstacles detected'
         -- instead of extending from both directions, we now process range twice: 
         right (extending left) and left (extending right)
         """
+        ranges = original_ranges.copy()
+        ranges = self.preprocess_lidar(ranges)
         # calculate how many indices to include in the safety bubble
         bubble_range = int(self._safety_radius / angle_increment)
 
         # process from right, extend bubble to left
-        for i in range(len(ranges) - 2, -1, -1): # to avoid index error 
+        for i in range(len(ranges) - 2, -1, -1):  # to avoid index error
             # detect disparity by checking if the distance change is greater than the safety radius
             if abs(ranges[i] - ranges[i + 1]) > self._safety_radius:
                 start_idx = max(0, i - bubble_range)
@@ -35,3 +40,5 @@ class DisparityExtender:
                 # extend right 
                 for j in range(i, end_idx):
                     ranges[j] = min(ranges[j], obstacle_distance)
+
+        return ranges
