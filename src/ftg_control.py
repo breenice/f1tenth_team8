@@ -65,7 +65,7 @@ class FTGControl:
         # TODO: FTG Tweak 4: Set a maximum distance for the LIDAR sensor (2m or 3m)
 
         # disparity extension
-        self.disparity_extender.safety_bubble(ranges, data.angle_increment)
+        self.disparity_extender.extend_disparities(ranges, data.angle_increment)
 
         # find largest gap and select the best point from that gap
         start_i, end_i = self.gap_finder.get_gap(ranges)
