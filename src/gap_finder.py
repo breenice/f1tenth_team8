@@ -5,19 +5,28 @@ GAP_DETECTION_THRESHOLD = 10
 GAP_TOO_CLOSE_THRESHOLD = 2
 
 
-def find_middle_point(start_i, end_i, ranges):
+def find_middle_point(start_i, end_i, data):
     """
     pick the middle point in the identified gap
     """
     return (start_i + end_i) // 2
 
+def find_least_steering_point(start_i, end_i, data):
+    center_index = len(data.ranges) // 2
+    print(start_i, end_i, center_index)
+    if start_i > center_index:
+        return start_i
+    elif end_i < center_index:
+        return end_i
+    else:
+        return center_index
 
-def find_deepest_point(start_i, end_i, ranges):
+def find_deepest_point(start_i, end_i, data):
     """
     pick furthest point in the identified gap ^ from there
     """
     # return index of the best point
-    return np.argmax(ranges[start_i:end_i + 1]) + start_i
+    return np.argmax(data.ranges[start_i:end_i + 1]) + start_i
     # if not using numpy
     #max_value = float('-inf')  # negative inf for larger range
     #max_index = start_i  
@@ -78,14 +87,15 @@ def filter_gaps(gaps, ranges):
 
 # TODO: We should also consider other ways to choosing gaps/choosing point in gap
 class GapFinder:
-    def __init__(self, gap_selection="widest", point_selection="middle"):
+    def __init__(self, gap_selection="widest", point_selection="least_steering"):
         gap_selection_functions = {
             "widest": find_widest_gap,
         }
 
         point_selection_functions = {
             "deepest": find_deepest_point,
-            "middle": find_middle_point
+            "middle": find_middle_point,
+            "least_steering": find_least_steering_point
         }
 
         self.gap_selection = gap_selection_functions[gap_selection]
@@ -94,14 +104,14 @@ class GapFinder:
     def get_gap(self, ranges):
         return self.gap_selection(ranges)
 
-    def get_point(self, start_i, end_i, ranges):
-        return self.point_selection(start_i, end_i, ranges)
+    def get_point(self, start_i, end_i, data):
+        return self.point_selection(start_i, end_i, data)
 
-    def get_point_to_go_to(self, ranges):
-        start_i, end_i = self.get_gap(ranges)
-        best_point = self.get_point(start_i, end_i, ranges)
+    def get_point_to_go_to(self, data):
+        start_i, end_i = self.get_gap(data.ranges)
+        best_point = self.get_point(start_i, end_i, data)
 
-        print("Length: " + str(len(ranges)))
+        print("Length: " + str(len(data.ranges)))
         print("Gap: " + str((start_i, end_i)))
         print("Best Point: " + str(best_point))
 

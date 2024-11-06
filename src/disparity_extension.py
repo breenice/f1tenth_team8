@@ -1,5 +1,5 @@
 class DisparityExtender:
-    def __init__(self, safety_radius=0.5, max_range=3):
+    def __init__(self, safety_radius=10, max_range=3):
         self._safety_radius = safety_radius
         self._max_range = max_range
 

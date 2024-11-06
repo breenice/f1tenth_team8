@@ -7,6 +7,8 @@ from sensor_msgs.msg import LaserScan, PointCloud2, PointField
 from ackermann_msgs.msg import AckermannDrive
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
 
 
 from disparity_extension import DisparityExtender
@@ -61,15 +63,13 @@ class FTGControl:
 
         # TODO: FTG Tweak 4: Set a maximum distance for the LIDAR sensor (2m or 3m)
 
-        # apply safety bubble around closest obstacle
-        # TODO: FTG Tweak 2: Disparity Extension should apply to every disparity, not just the closest point
-        closest_idx = np.argmin(ranges)  # index of closest point
-        # self.disparity_extender.safety_bubble(ranges, closest_idx, data.angle_increment)
+        # disparity extension
+        self.disparity_extender.safety_bubble(ranges, data.angle_increment)
 
         # find largest gap and select the best point from that gap
         start_i, end_i = self.gap_finder.get_gap(ranges)
-        best_point = self.gap_finder.get_point(start_i, end_i, ranges)
-        # best_point = self.gap_finder.get_point_to_go_to(ranges) # This does the same as above, but in one line
+        best_point = self.gap_finder.get_point(start_i, end_i, data)
+        # best_point = self.gap_finder.get_point_to_go_to(data) # This does the same as above, but in one line
 
         # calculate steering angle towards best point
         steering_angle = self.get_steering_angle(best_point, data)
@@ -129,46 +129,45 @@ class FTGControl:
         """
         publish LIDAR data as PointCloud2, add color to borders of gap
         """
-        # Setup header for PointCloud2
-        header = Header()
-        header.stamp = rospy.Time.now()
-        header.frame_id = data.header.frame_id
-        fields = [
-            PointField('x', 0, PointField.FLOAT32, 1),
-            PointField('y', 4, PointField.FLOAT32, 1),
-            PointField('z', 8, PointField.FLOAT32, 1),
-            PointField('rgb', 12, PointField.UINT32, 1)
-        ]
-
         # add all laser scan points, but set start_i and end_i to red (edge of gap)
         angle = data.angle_min
-        points = []
-        for i, r in enumerate(data.ranges):
-            if i == start_i or i == end_i:
-                color = 0xFF0000
-            else:
-                color = 0x00FF00
+        marker1_pub = rospy.Publisher('marker1', Marker, queue_size=10)
+        marker2_pub = rospy.Publisher('marker2', Marker, queue_size=10)
 
+
+        marker = Marker()
+        marker.header.frame_id = "car_8_laser"
+        marker.header.stamp = rospy.Time.now()
+
+        marker.type = Marker.SPHERE
+        marker.action = Marker.ADD
+
+        marker.scale.x = 0.1
+        marker.scale.y = 0.1
+        marker.scale.z = 0.1
+
+        for i, r in enumerate(data.ranges):
             if data.range_min <= r <= data.range_max:
                 x = r * math.cos(angle)
                 y = r * math.sin(angle)
                 z = 0
 
-                point = [x, y, z, color]
-                points.append(point)
+                marker.pose.position.x = x
+                marker.pose.position.y = y
+                marker.pose.position.z = z
+
+                if i == start_i:
+                    marker.color.g = 1.0
+                    marker.color.a = 1.0
+                    marker1_pub.publish(marker)
+                elif i == end_i:
+                    marker.color.g = 0
+                    marker.color.r = 1.0
+                    marker.color.a = 1.0
+                    marker2_pub.publish(marker)
 
             angle += data.angle_increment
 
-        pc2_msg = point_cloud2.create_cloud(header, fields, points)
-        
-        resize = 200
-        pc2_msg.height = resize
-        pc2_msg.width = resize
-        pc2_msg.row_step = resize * pc2_msg.point_step
-
-        new_size = pc2_msg * resize * pc2_msg.point_step
-        pc2_msg.data = bytearray(new_size)
-        self.lidar_pub.publish(pc2_msg)
 
 
 if __name__ == '__main__':
