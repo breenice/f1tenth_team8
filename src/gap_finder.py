@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import rospy
 
 GAP_DETECTION_THRESHOLD = 10
@@ -13,7 +14,10 @@ def find_middle_point(start_i, end_i, ranges, data):
 
 
 def find_least_steering_point(start_i, end_i, ranges, data):
-    center_index = len(data.ranges) // 2
+    angle_rad = math.radians(90)  # 90 degrees is directly in front
+    angle_min = -(data.angle_min % math.pi)
+    center_index = int((angle_rad - angle_min) / data.angle_increment)
+
     print(start_i, end_i, center_index)
     if start_i > center_index:
         return start_i
