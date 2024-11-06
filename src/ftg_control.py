@@ -3,13 +3,14 @@
 import rospy
 import numpy as np
 import math
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import LaserScan, PointCloud2, PointField
 from ackermann_msgs.msg import AckermannDrive
+from sensor_msgs import point_cloud2
+from std_msgs.msg import Header
+
 
 from disparity_extension import DisparityExtender
-#import disparity_extension 
 from gap_finder import GapFinder
-#import gap_finder
 
 
 
@@ -24,6 +25,7 @@ TURN_SPEED = 5.0
 class FTGControl:
     def __init__(self):
         self.drive_pub = rospy.Publisher("/car_8/offboard/command", AckermannDrive, queue_size=10)
+        self.lidar_pub = rospy.Publisher("/car_8/lidar/processed", PointCloud2, queue_size=2)
         rospy.Subscriber("/car_8/scan", LaserScan, self.lidar_callback)
 
         self.disparity_extender = DisparityExtender(safety_radius=SAFETY_RADIUS)
@@ -65,15 +67,16 @@ class FTGControl:
         # self.disparity_extender.safety_bubble(ranges, closest_idx, data.angle_increment)
 
         # find largest gap and select the best point from that gap
-        # start_i, end_i = self.gap_finder.get_gap(ranges)
-        # best_point = self.gap_finder.get_point(start_i, end_i, ranges)
-        best_point = self.gap_finder.get_point_to_go_to(ranges) # This does the same as above, but in one line
+        start_i, end_i = self.gap_finder.get_gap(ranges)
+        best_point = self.gap_finder.get_point(start_i, end_i, ranges)
+        # best_point = self.gap_finder.get_point_to_go_to(ranges) # This does the same as above, but in one line
 
         # calculate steering angle towards best point
         steering_angle = self.get_steering_angle(best_point, data)
 
         # publish
         self.publish_drive(steering_angle)
+        self.publish_lidar(data, start_i, end_i)
 
     # TODO: This probably needs tuning
     def get_steering_angle(self, best_point, data):
@@ -121,6 +124,43 @@ class FTGControl:
         # speed = np.interp(abs_angle, [0, math.radians(90)], [DEFAULT_VELOCITY, TURN_SPEED])
 
         # return speed
+
+    def publish_lidar(self, data, start_i, end_i):
+        """
+        publish LIDAR data as PointCloud2, add color to borders of gap
+        """
+        # Setup header for PointCloud2
+        header = Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = data.header.frame_id
+        fields = [
+            PointField('x', 0, PointField.FLOAT32, 1),
+            PointField('y', 4, PointField.FLOAT32, 1),
+            PointField('z', 8, PointField.FLOAT32, 1),
+            PointField('rgb', 12, PointField.UINT32, 1)
+        ]
+
+        # add all laser scan points, but set start_i and end_i to red (edge of gap)
+        angle = data.angle_min
+        points = []
+        for i, r in enumerate(data.ranges):
+            if i == start_i or i == end_i:
+                color = 0xFF0000
+            else:
+                color = 0x00FF00
+
+            if data.range_min <= r <= data.range_max:
+                x = r * math.cos(angle)
+                y = r * math.sin(angle)
+                z = 0
+
+                point = [x, y, z, color]
+                points.append(point)
+
+            angle += data.angle_increment
+
+        pc2_msg = point_cloud2.create_cloud(header, fields, points)
+        self.lidar_pub.publish(pc2_msg)
 
 
 if __name__ == '__main__':
