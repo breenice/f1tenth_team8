@@ -160,7 +160,16 @@ class FTGControl:
             angle += data.angle_increment
 
         pc2_msg = point_cloud2.create_cloud(header, fields, points)
-        pc2_msg.resize(200)
+        # pc2_msg.resize(200)
+        # int scale = 3
+        #pc2_msg->width = cloud->width * scale;
+        #pc2_msg->height = cloud->height * scale;
+        #pc2_msg->points.resize(pc2_msg->width * pc2_msg->height);
+        #for  size_t i = 0, ii = 0; i < pc2_msg->height; ii += scale, i++{
+        #    for size_t j = 0, jj = 0; j < pc2_msg->width; jj += scale, j++{
+        #        pc2_msg->at(j, i) = cloud->at(jj, ii)
+        #    }
+        #}
         self.lidar_pub.publish(pc2_msg)
 
 
