@@ -2,9 +2,9 @@ import numpy as np
 import math
 import rospy
 
-GAP_DETECTION_THRESHOLD = 10
+GAP_DETECTION_THRESHOLD = 30
 GAP_TOO_CLOSE_THRESHOLD = 2
-
+GAP_ANGLE_CHANGE_THRESHOLD = 10 # max change allowed
 
 def find_middle_point(start_i, end_i, ranges, data):
     """
@@ -94,7 +94,7 @@ def filter_gaps(gaps, ranges):
 
 # TODO: We should also consider other ways to choosing gaps/choosing point in gap
 class GapFinder:
-    def __init__(self, gap_selection="widest", point_selection="least_steering"):
+    def __init__(self, gap_selection="widest", point_selection="middle"):
         gap_selection_functions = {
             "widest": find_widest_gap,
         }

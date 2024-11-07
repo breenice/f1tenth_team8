@@ -17,7 +17,7 @@ from gap_finder import GapFinder
 
 
 # parameters 
-SAFETY_RADIUS = 0.5 
+SAFETY_RADIUS = 5
 GAP_DETECTION_THRESHOLD = 0.1  
 MAX_LIDAR_DISTANCE = 10.0 
 DEFAULT_VELOCITY = 20.0
@@ -32,7 +32,7 @@ class FTGControl:
         self.marker2_pub = rospy.Publisher('marker2', Marker, queue_size=10)
         rospy.Subscriber("/car_8/scan", LaserScan, self.lidar_callback)
 
-        self.disparity_extender = DisparityExtender(safety_radius=SAFETY_RADIUS)
+        self.disparity_extender = DisparityExtender()
         self.gap_finder = GapFinder()
 
     # def preprocess_lidar(self, ranges):
@@ -65,7 +65,7 @@ class FTGControl:
         # TODO: FTG Tweak 4: Set a maximum distance for the LIDAR sensor (2m or 3m)
 
         # disparity extension
-        self.disparity_extender.extend_disparities(ranges, data.angle_increment)
+        ranges = self.disparity_extender.extend_disparities(ranges, data.angle_increment)
 
         # find largest gap and select the best point from that gap
         start_i, end_i = self.gap_finder.get_gap(ranges)
@@ -112,7 +112,7 @@ class FTGControl:
         """
         # if turn is sharp (> 30 degrees) then slow down, if not keep default speed
         if abs(steering_angle) > math.radians(30):
-            return 15.0
+            return 25.0
         #    return TURN_SPEED  # if the turn are too sharp
         else:
             return DEFAULT_VELOCITY
@@ -143,7 +143,7 @@ class FTGControl:
 
         angle = data.angle_min
         points = []
-        for r, r_ext in enumerate(zip(data.ranges, ranges)):
+        for r, r_ext in zip(data.ranges, ranges):
             if r == r_ext:
                 x = r * math.cos(angle)
                 y = r * math.sin(angle)
@@ -171,13 +171,13 @@ class FTGControl:
         # create PointCloud2 message
         pc2_msg = point_cloud2.create_cloud(header, fields, points)
 
-        resize = 200
-        pc2_msg.height = resize
-        pc2_msg.width = resize
-        pc2_msg.row_step = resize * pc2_msg.point_step
+        # resize = 200
+        # pc2_msg.height = resize
+        # pc2_msg.width = resize
+        # pc2_msg.row_step = resize * pc2_msg.point_step
 
-        new_size = pc2_msg * resize * pc2_msg.point_step
-        pc2_msg.data = bytearray(new_size)
+        # new_size = pc2_msg * resize * pc2_msg.point_step
+        # pc2_msg.data = bytearray(new_size)
         self.lidar_pub.publish(pc2_msg)
 
     def publish_gap_points(self, data, start_i, end_i):
