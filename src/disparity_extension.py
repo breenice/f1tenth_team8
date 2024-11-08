@@ -2,8 +2,8 @@ import numpy as np
 
 
 class DisparityExtender:
-    def __init__(self, safety_extension=20, max_range=5):
-        self.disparity = 0.5
+    def __init__(self, disparity_distance, safety_extension, max_range):
+        self.disparity = disparity_distance
         self._safety_safety_extension = safety_extension
         self._max_range = max_range
 

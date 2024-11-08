@@ -1,0 +1,11 @@
+MAX_LIDAR_DISTANCE = 4
+STEERING_MULTIPLIER = 2.5
+DEFAULT_SPEED = 30
+
+DISPARITY_DISTANCE = 0.5
+SAFETY_EXTENSION = 15
+
+GAP_SELECTION = "deepest" # least_steering, widest, deepest
+POINT_SELECTION = "middle" # lear_steering, middle, deepest
+MIN_GAP_SIZE = 20
+MIN_GAP_DISTANCE = 2

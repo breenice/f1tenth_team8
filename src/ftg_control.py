@@ -13,15 +13,7 @@ from geometry_msgs.msg import Point
 
 from disparity_extension import DisparityExtender
 from gap_finder import GapFinder
-
-
-
-# parameters 
-SAFETY_RADIUS = 5
-GAP_DETECTION_THRESHOLD = 0.1  
-MAX_LIDAR_DISTANCE = 10.0 
-DEFAULT_VELOCITY = 20.0
-TURN_SPEED = 5.0 
+from ftg_config import *
 
 
 class FTGControl:
@@ -32,20 +24,8 @@ class FTGControl:
         self.marker2_pub = rospy.Publisher('marker2', Marker, queue_size=10)
         rospy.Subscriber("/car_8/scan", LaserScan, self.lidar_callback)
 
-        self.disparity_extender = DisparityExtender()
-        self.gap_finder = GapFinder()
-
-    # def preprocess_lidar(self, ranges):
-    #     """
-    #     preprocess LIDAR data by capping max range and handling NaNs
-    #     """
-    #     processed_ranges = []
-    #     for r in ranges:
-    #         if math.isnan(r) or r > MAX_LIDAR_DISTANCE:
-    #             processed_ranges.append(MAX_LIDAR_DISTANCE)
-    #         else:
-    #             processed_ranges.append(r)
-    #     return processed_ranges
+        self.disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
+        self.gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE)
     
     def lidar_callback(self, data):
         """
@@ -59,17 +39,13 @@ class FTGControl:
         # TODO: We can also try linearly interpolating NaNs instead of setting to max distance
         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
 
-        # if we dont want to use numpy?
-        # ranges = self.preprocess_lidar(list(data.ranges))
-
-        # TODO: FTG Tweak 4: Set a maximum distance for the LIDAR sensor (2m or 3m)
-
         # disparity extension
         ranges = self.disparity_extender.extend_disparities(ranges, data.angle_increment)
 
         # find largest gap and select the best point from that gap
-        start_i, end_i = self.gap_finder.get_gap(ranges)
-        best_point = self.gap_finder.get_point(start_i, end_i, ranges, data)
+        self.gap_finder.update_data(ranges, data)
+        start_i, end_i = self.gap_finder.get_gap()
+        best_point = self.gap_finder.get_point(start_i, end_i)
         # best_point = self.gap_finder.get_point_to_go_to(data) # This does the same as above, but in one line
 
         # calculate steering angle towards best point
@@ -84,7 +60,7 @@ class FTGControl:
     def get_steering_angle(self, best_point, data):
         steering_direction = self.get_angle_of_lidar_idx(best_point, data)
         steering_offset = steering_direction - 90
-        steering_angle = steering_offset * 2.5
+        steering_angle = steering_offset * STEERING_MULTIPLIER
         return steering_angle
     
     def get_angle_of_lidar_idx(self, idx, data):
@@ -110,12 +86,14 @@ class FTGControl:
         """
         adjust speed based on the distance to the nearest obstacle
         """
+        return DEFAULT_SPEED
+
         # if turn is sharp (> 30 degrees) then slow down, if not keep default speed
-        if abs(steering_angle) > math.radians(30):
-            return 25.0
-        #    return TURN_SPEED  # if the turn are too sharp
-        else:
-            return DEFAULT_VELOCITY
+        # if abs(steering_angle) > math.radians(30):
+        #     return 25.0
+        # #    return TURN_SPEED  # if the turn are too sharp
+        # else:
+        #     return DEFAULT_VELOCITY
 
         # uhhh attempt to slow speed graudally but not actually sure if it'l work
         # # calculate absolute value of the steering angle to determine severity of the turn
