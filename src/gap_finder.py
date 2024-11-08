@@ -5,11 +5,12 @@ import rospy
 
 # TODO: We should also consider other ways to choosing gaps/choosing point in gap
 class GapFinder:
-    def __init__(self, gap_selection, point_selection, min_gap_size, min_gap_distance):
+    def __init__(self, gap_selection, point_selection, min_gap_size, min_gap_distance, cornering_distance):
         gap_selection_functions = {
             "deepest" : self.find_deepest_gap,
             "widest": self.find_widest_gap,
-            "least_steering": self.find_least_steering_gap
+            "least_steering": self.find_least_steering_gap,
+            "largest_integral": self.find_largest_integral_gap
         }
 
         point_selection_functions = {
@@ -22,6 +23,7 @@ class GapFinder:
         self.point_selection = point_selection_functions[point_selection]
         self.min_gap_size = min_gap_size
         self.min_gap_distance = min_gap_distance
+        self.cornering_distance = cornering_distance
 
         self.ranges = None
         self.data = None
@@ -34,6 +36,17 @@ class GapFinder:
         return self.gap_selection()
 
     def get_point(self, start_i, end_i):
+        # Check cornering
+        min_index = self.get_index_of(0)
+        max_index = self.get_index_of(180)
+
+        close = 0
+        for i in range(min_index, max_index):
+            if self.ranges[i] < self.cornering_distance:
+                close += 1
+        if close > 10:
+            self.get_index_of(90)
+
         return self.point_selection(start_i, end_i)
 
     def get_point_to_go_to(self):
@@ -53,9 +66,7 @@ class GapFinder:
         Find the point in the gap that requires the least steering
         (closest to straight ahead)
         """
-        angle_rad = math.radians(90)  # 90 degrees is directly in front
-        angle_min = -(self.data.angle_min % math.pi)
-        center_index = int((angle_rad - angle_min) / self.data.angle_increment)
+        center_index = self.get_index_of(90)
 
         # If gap contains center, return center
         if start_i <= center_index <= end_i:
@@ -89,7 +100,7 @@ class GapFinder:
             return 0, len(self.ranges) - 1  # default to full range if no valid gaps
 
         # find largest gap based on its length, then return start and end indices of the largest gap
-        largest_gap = max(valid_gaps, key=len)
+        largest_gap = max(valid_gaps, key=lambda x : x[-1] - x[0])
         return largest_gap[0], largest_gap[-1]
 
 
@@ -104,13 +115,42 @@ class GapFinder:
             return 0, len(self.ranges) - 1  # default to full range if no valid gaps
 
         # find largest gap based on its length, then return start and end indices of the largest gap
+        largest_gap = max(valid_gaps, key=lambda x : max(self.ranges[x[0]: x[-1]]))
+        return largest_gap[0], largest_gap[-1]
+    
+    def find_largest_integral_gap(self):
+        """
+        find deepest gap
+        """
+        valid_gaps = self.get_gaps()
+
+        if not valid_gaps:
+            rospy.logwarn("No valid gaps detected")
+            return 0, len(self.ranges) - 1  # default to full range if no valid gaps
+
+        # find largest gap based on its length, then return start and end indices of the largest gap
         largest_gap = max(valid_gaps, key=lambda x : sum(self.ranges[x[0]: x[-1]]))
         return largest_gap[0], largest_gap[-1]
 
 
-
     def filter_gaps(self, gaps):
-        return [gap for gap in gaps if len(gap) > self.min_gap_size]
+        min_index = self.get_index_of(0)
+        max_index = self.get_index_of(180)
+        valid_gaps = []
+        for gap in gaps:
+            if len(gap) <= self.min_gap_size or gap[-1] < min_index or gap[0] > max_index:
+                continue
+            if gap[0] < min_index:
+                gap[0] = min_index
+            if gap[-1] > max_index:
+                gap[-1] = max_index
+            valid_gaps.append(gap)
+
+        # print(min_index, max_index)
+        # print([(gap[0], gap[-1]) for gap in gaps if len(gap) > self.min_gap_size])
+        # print([(gap[0], gap[-1]) for gap in valid_gaps])
+
+        return valid_gaps
 
 
     def find_least_steering_gap(self):
@@ -125,9 +165,7 @@ class GapFinder:
 
         
         # Calculate the center index (represents straight ahead)
-        angle_rad = math.radians(90)  # 90 degrees is directly in front
-        angle_min = -(self.data.angle_min % math.pi)
-        center_index = int((angle_rad - angle_min) / self.data.angle_increment)
+        center_index = self.get_index_of(90)
         
         # Find the gap with center closest to the car's forward direction
         min_distance_to_center = float('inf')
@@ -153,3 +191,10 @@ class GapFinder:
         valid_gaps = self.filter_gaps(gaps)
 
         return valid_gaps
+    
+    def get_index_of(self, degrees):
+        angle_rad = math.radians(degrees)
+        angle_min = -(self.data.angle_min % math.pi)
+        index = int((angle_rad - angle_min) / self.data.angle_increment)
+        return index
+

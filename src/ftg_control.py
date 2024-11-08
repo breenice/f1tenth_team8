@@ -25,7 +25,7 @@ class FTGControl:
         rospy.Subscriber("/car_8/scan", LaserScan, self.lidar_callback)
 
         self.disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
-        self.gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE)
+        self.gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
     
     def lidar_callback(self, data):
         """
@@ -35,9 +35,11 @@ class FTGControl:
         - publish steering and velocity commands based on the identified gap
         """
         # preprocess LIDAR data by converting LIDAR data to numpy array and handle NaNs (replace NaNs w/ max range)
+        data.ranges = [i + 0.5 for i in data.ranges]
         ranges = np.array(data.ranges)
         # TODO: We can also try linearly interpolating NaNs instead of setting to max distance
         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
+        # ranges = np.maximum(ranges+0.5,0)
 
         # disparity extension
         ranges = self.disparity_extender.extend_disparities(ranges, data.angle_increment)
