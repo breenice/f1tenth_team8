@@ -14,17 +14,23 @@ def find_middle_point(start_i, end_i, ranges, data):
 
 
 def find_least_steering_point(start_i, end_i, ranges, data):
-    angle_rad = math.radians(90)  # 90 degrees is directly in front
-    angle_min = -(data.angle_min % math.pi)
-    center_index = int((angle_rad - angle_min) / data.angle_increment)
-
-    print(start_i, end_i, center_index)
+    """
+    Find the point in the gap that requires the least steering
+    (closest to straight ahead)
+    """
+    # Center index represents straight ahead
+    center_index = len(ranges) // 2
+    
+    # If gap contains center, return center
+    if start_i <= center_index <= end_i:
+        return center_index
+    
+    # If gap is to the right of center, return leftmost point
     if start_i > center_index:
         return start_i
-    elif end_i < center_index:
-        return end_i
-    else:
-        return center_index
+        
+    # If gap is to the left of center, return rightmost point
+    return end_i
 
 
 def find_deepest_point(start_i, end_i, ranges, data):
@@ -92,11 +98,44 @@ def filter_gaps(gaps, ranges):
     return [gap for gap in gaps if len(gap) > GAP_DETECTION_THRESHOLD]
 
 
+def find_least_steering_gap(ranges):
+    """
+    Find the gap that requires the least steering (most aligned with car's forward direction)
+    """
+    # create a mask for free space points (non-zero values)
+    free_space = ranges > 1
+    too_close = np.where(ranges < GAP_TOO_CLOSE_THRESHOLD)[0]
+    
+    # Split into gaps
+    gaps = np.split(np.arange(len(ranges)), too_close)
+    
+    # Filter out small gaps
+    valid_gaps = filter_gaps(gaps, ranges)
+    
+    # Calculate the center index (represents straight ahead)
+    center_index = len(ranges) // 2
+    
+    # Find the gap with center closest to the car's forward direction
+    min_distance_to_center = float('inf')
+    best_gap = valid_gaps[0]
+    
+    for gap in valid_gaps:
+        gap_center = (gap[0] + gap[-1]) // 2
+        distance_to_center = abs(gap_center - center_index)
+        
+        if distance_to_center < min_distance_to_center:
+            min_distance_to_center = distance_to_center
+            best_gap = gap
+    
+    return best_gap[0], best_gap[-1]
+
+
 # TODO: We should also consider other ways to choosing gaps/choosing point in gap
 class GapFinder:
     def __init__(self, gap_selection="widest", point_selection="middle"):
         gap_selection_functions = {
             "widest": find_widest_gap,
+            "least_steering": find_least_steering_gap
         }
 
         point_selection_functions = {
