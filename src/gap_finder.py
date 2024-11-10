@@ -118,6 +118,25 @@ class GapFinder:
         largest_gap = max(valid_gaps, key=lambda x : max(self.ranges[x[0]: x[-1]]))
         return largest_gap[0], largest_gap[-1]
     
+    def find_deepest_favor_left_gap(self):
+        """
+        find deepest gap
+        """
+        valid_gaps = self.get_gaps()
+
+        if not valid_gaps:
+            rospy.logwarn("No valid gaps detected")
+            return 0, len(self.ranges) - 1  # default to full range if no valid gaps
+
+        # find largest gap based on its length, then return start and end indices of the largest gap
+        deepest_gap = max(valid_gaps, key=lambda x : max(self.ranges[x[0]: x[-1]]))
+        deepest_point = max(self.ranges[deepest_gap[0]:deepest_gap[-1]])
+        # Filter to only gaps that have a deepest point within 0.2 meters of the deepest point
+        potential_gaps = list(filter(lambda x : deepest_point - max(self.ranges[x[0]: x[-1]]) < 0.2, valid_gaps))
+        largest_gap = max(potential_gaps, key=lambda x : x[-1])
+        return largest_gap[0], largest_gap[-1]
+
+    
     def find_largest_integral_gap(self):
         """
         find deepest gap

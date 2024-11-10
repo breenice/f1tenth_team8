@@ -35,7 +35,7 @@ class FTGControl:
         - publish steering and velocity commands based on the identified gap
         """
         # preprocess LIDAR data by converting LIDAR data to numpy array and handle NaNs (replace NaNs w/ max range)
-        data.ranges = [i + 0.5 for i in data.ranges]
+        # data.ranges = [i + 0.25 for i in data.ranges]
         ranges = np.array(data.ranges)
         # TODO: We can also try linearly interpolating NaNs instead of setting to max distance
         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
@@ -88,23 +88,23 @@ class FTGControl:
         """
         adjust speed based on the distance to the nearest obstacle
         """
-        return DEFAULT_SPEED
+        # return DEFAULT_SPEED
 
         # if turn is sharp (> 30 degrees) then slow down, if not keep default speed
-        # if abs(steering_angle) > math.radians(30):
-        #     return 25.0
+        # if abs(steering_angle) > 50:
+        #     return 15.0
         # #    return TURN_SPEED  # if the turn are too sharp
         # else:
-        #     return DEFAULT_VELOCITY
+        #     return MAXIMUM_SPEED
 
         # uhhh attempt to slow speed graudally but not actually sure if it'l work
         # # calculate absolute value of the steering angle to determine severity of the turn
-        # abs_angle = abs(steering_angle)
+        abs_angle = abs(steering_angle)
 
         # # gradually slow speed as the steering angle increases (sharp turn)
-        # speed = np.interp(abs_angle, [0, math.radians(90)], [DEFAULT_VELOCITY, TURN_SPEED])
+        speed = np.interp(abs_angle, [30, 100], [MAXIMUM_SPEED, MINIMUM_SPEED])
 
-        # return speed
+        return speed
 
     def publish_lidar(self, data, ranges):
         """
