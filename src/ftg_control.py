@@ -26,6 +26,9 @@ class FTGControl:
 
         self.disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
         self.gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
+        
+        # count for frames w/o gaps
+        self.no_gap_detected = 0
     
     def lidar_callback(self, data):
         """
@@ -58,6 +61,18 @@ class FTGControl:
         self.publish_gap_points(data, start_i, end_i)
         self.publish_lidar(data, ranges)
 
+        # for no gap detection for more than 5 frm
+        if start_i == 0 and end_i == len(ranges) - 1:
+            # no valid gap detected
+            self.no_gap_detected += 1
+            if self.no_gap_detected > 5:
+                # slow if no gap detected 
+                self.publish_drive(steering_angle, speed=MINIMUM_SPEED / 2)
+        else:
+            # reset counter 
+            self.no_gap_detected = 0
+            self.publish_drive(steering_angle)
+
     # TODO: This probably needs tuning
     def get_steering_angle(self, best_point, data):
         steering_direction = self.get_angle_of_lidar_idx(best_point, data)
@@ -71,7 +86,7 @@ class FTGControl:
         angle = idx * data.angle_increment + angle_min
         return math.degrees(angle)
 
-    def publish_drive(self, steering_angle):
+    def publish_drive(self, steering_angle, speed =None):
         """
         publish to AckermannDrive with our calculated steering angle
         """
@@ -79,8 +94,17 @@ class FTGControl:
         command = AckermannDrive()
         # clamp steering angle between [-100, 100] degrees
         command.steering_angle = min(max(steering_angle, -100), 100)
+        
         # set speed based on steering angle
-        command.speed = self.dynamic_velocity(steering_angle)
+        # commenting out for now 
+        # #command.speed = self.dynamic_velocity(steering_angle)
+
+        # set speed for no gaps dtected for car to slow down or to defult
+        if speed is None:
+            command.speed = self.dynamic_velocity(steering_angle)
+        else:
+            command.speed = speed
+
         # publish drive command
         self.drive_pub.publish(command)
 
