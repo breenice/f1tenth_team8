@@ -28,12 +28,41 @@ class GapFinder:
         self.ranges = None
         self.data = None
 
+        # NEW CODE TO FIX GAP SWITCHING; Initialize gap history
+        self.previous_gaps = []
+        self.gap_history_size = 5 # change
+
     def update_data(self, ranges, data):
         self.ranges = ranges
         self.data = data
 
     def get_gap(self):
-        return self.gap_selection()
+        # ORIGINAL CODE
+        # return self.gap_selection()
+
+        # NEW CODE
+
+        # ADD GAPS TO GAP HISTORY, ENSURE IT FOLLOWS GAP HISTORY SIZE FOR MEMORY
+        current_gap = self.gap_selection()
+        self.previous_gaps.append(current_gap)
+        if len(self.previous_gaps) > self.gap_history_size:
+            self.previous_gaps.pop(0)
+        
+        # if we have atleast 2 gaps in history
+        if len(self.previous_gaps) > 1:
+            # average center of previous gaps in history (p[0] and p[1] start and end indicies)
+            prev_gap_center = sum((p[0] + p[1]) for p in self.previous_gaps[:-1]) / (2 * (len(self.previous_gaps)-1))
+            # center of current gap
+            current_gap_center = (current_gap[0] + current_gap[1]) / 2
+            # if the current gap center differ to much from history 
+            threshold = len(self.ranges) * .25 # 25% OF LIDAR READING INDEX IS THRESHOLD
+            if abs(current_gap_center - prev_gap_center) > threshold:
+                return self.previous_gaps[-2] # last stable gap we were using
+        return current_gap
+
+        
+
+
 
     def get_point(self, start_i, end_i):
         # Check cornering
@@ -101,6 +130,7 @@ class GapFinder:
 
         # find largest gap based on its length, then return start and end indices of the largest gap
         largest_gap = max(valid_gaps, key=lambda x : x[-1] - x[0])
+
         return largest_gap[0], largest_gap[-1]
 
 
