@@ -32,11 +32,14 @@ class GapFinder:
         self.previous_gaps = []
         self.gap_history_size = 5 # change
 
+        self.og_min_gap_distance = min_gap_distance  # store orginial min gap distance
+
     def update_data(self, ranges, data):
         self.ranges = ranges
         self.data = data
 
     def get_gap(self):
+        valid_gaps = self.get_gaps() # for if no gaps found 
         # ORIGINAL CODE
         # return self.gap_selection()
 
@@ -59,8 +62,18 @@ class GapFinder:
             if abs(current_gap_center - prev_gap_center) > threshold:
                 return self.previous_gaps[-2] # last stable gap we were using
         return current_gap
-
+    
+        # increase min_gap_distance if no valid gaps found
+        if not valid_gaps:
+            self.min_gap_distance += 0.5  # increase min gap distance in increments
+            if self.min_gap_distance > 2 * self.og_min_gap_distance:
+                self.min_gap_distance = self.og_min_gap_distance  # reset if maxed out
+            return 0, len(self.ranges) - 1  # default
         
+        # reset min_gap_distance if valid gaps are found
+        self.min_gap_distance = self.og_min_gap_distance
+
+        return self.gap_selection()
 
 
 
