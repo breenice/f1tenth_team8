@@ -34,6 +34,14 @@ class GapFinder:
 
         self.og_min_gap_distance = min_gap_distance  # store orginial min gap distance
 
+
+
+        # NEW CODE TO FIX TURNING/CORNERING ISSUE ; track vehicle speed for dynamic cornering
+        self.current_speed = 0
+        self.prev_steering_angle = 90 # start straight
+        self.steering_smoothing = .3 # smoother = lower value
+
+
     def update_data(self, ranges, data):
         self.ranges = ranges
         self.data = data
@@ -78,18 +86,78 @@ class GapFinder:
 
 
     def get_point(self, start_i, end_i):
+
+        # OLD COOOODE ----
+
         # Check cornering
         min_index = self.get_index_of(0)
         max_index = self.get_index_of(180)
 
-        close = 0
-        for i in range(min_index, max_index):
-            if self.ranges[i] < self.cornering_distance:
-                close += 1
-        if close > 10:
-            self.get_index_of(90)
+        # close = 0
+        # for i in range(min_index, max_index):
+        #     if self.ranges[i] < self.cornering_distance:
+        #         close += 1
+        # if close > 10:
+        #     self.get_index_of(90)
 
-        return self.point_selection(start_i, end_i)
+        # ----
+
+
+        # NEW COOOOOODE -0---- (cornering/turning)
+
+        CORNER_DETECTION_THRESHOLD = 20
+        CORNER_SEARCH_RANGE = 20
+
+        # count points that are too close
+        close_points = sum(1 for i in range(min_index, max_index) if self.ranges[i] < self.cornering_distance)
+
+        # modified: only consider it a corner if we have more close points
+        if close_points > CORNER_DETECTION_THRESHOLD: # threshold = 20
+            # calculate a weighted point instead of jumping to 90 degree
+            center_index = self.get_index_of(90)
+            # find the furthest point within a reasonable range
+            search_start = max(start_i, center_index - CORNER_SEARCH_RANGE)
+            search_end = min(end_i, center_index + CORNER_SEARCH_RANGE)
+            
+            # get the point with maximum distance in our research range
+            max_dist_index = search_start + np.argmax(self.ranges[search_start:search_end])
+
+            # smooth the transition
+            target_angle = self.get_angle_from_index(max_dist_index)
+            smoothed_angle = self.smooth_steering(target_angle)
+
+            return self.get_index_of(smoothed_angle)
+    
+        # if not cornering, use normal point selection
+        selected_point = self.point_selection(start_i, end_i)
+
+        # smooth the tansition even in normal driving
+        target_angle = self.get_angle_from_index(selected_point)
+        smoothed_angle = self.smooth_steering(target_angle)
+
+        return self.get_index_of(smoothed_angle)
+    
+
+    #---------
+
+        # OLD CODE RETURN
+        # return self.point_selection(start_i, end_i) 
+    
+    # NEW CODE HELPER METHOD (cornering/turning)
+    def get_angle_from_index(self, index):
+        ''' convert lidar to angle in degree'''
+        angle_rad = index * self.data.angle_increment + self.data.angle_min
+        return math.degrees(angle_rad)
+    
+    # NEW CODE HELPER METHOD (cornering/turning)
+    def smooth_steering(self, target_angle):
+        ''' smoothly transition between current steering angle and target angle'''
+        ''' formula: new angle = prev angle * (1 - smooth) + target_angle * smooth'''
+        smoothed_angle = (self.prev_steering_angle * (1 - self.steering_smoothing) + target_angle * self.steering_smoothing)
+        self.prev_steering_angle = smoothed_angle
+        return smoothed_angle
+
+    
 
     def get_point_to_go_to(self):
         start_i, end_i = self.get_gap()
