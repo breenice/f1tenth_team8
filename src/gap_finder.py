@@ -30,7 +30,7 @@ class GapFinder:
 
         # NEW CODE TO FIX GAP SWITCHING; Initialize gap history
         self.previous_gaps = []
-        self.gap_history_size = 6 # change
+        self.gap_history_size = 2 # change
 
         self.og_min_gap_distance = min_gap_distance  # store orginial min gap distance
 
@@ -56,7 +56,7 @@ class GapFinder:
         # ----- 
         # increase min_gap_distance if no valid gaps found
         if not valid_gaps:
-            self.min_gap_distance += 0.5  # increase min gap distance in increments
+            self.min_gap_distance -= .025  # increase min gap distance in increments
             if self.min_gap_distance > 2 * self.og_min_gap_distance:
                 self.min_gap_distance = self.og_min_gap_distance  # reset if maxed out
             return 0, len(self.ranges) - 1  # default
@@ -80,7 +80,7 @@ class GapFinder:
             # center of current gap
             current_gap_center = (current_gap[0] + current_gap[1]) / 2
             # if the current gap center differ to much from history 
-            threshold = len(self.ranges) * .35 # 35% OF LIDAR READING INDEX IS THRESHOLD  
+            threshold = len(self.ranges) * .4 # 35% OF LIDAR READING INDEX IS THRESHOLD  
             if abs(current_gap_center - prev_gap_center) > threshold:
                 return self.previous_gaps[-2] # last stable gap we were using
         return current_gap
@@ -94,15 +94,17 @@ class GapFinder:
         # OLD COOOODE ----
 
         # Check cornering
-        min_index = self.get_index_of(0)
+        min_index = self.get_index_of(90)
         max_index = self.get_index_of(180)
 
         close = 0
         for i in range(min_index, max_index):
             if self.ranges[i] < self.cornering_distance:
                 close += 1
-        if close > 10:
-            self.get_index_of(90)
+        if close > 5:
+            print("cornering")
+            return self.get_index_of(90)
+            
 
         # ----
 

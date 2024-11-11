@@ -1,4 +1,4 @@
-MAX_LIDAR_DISTANCE = 3
+MAX_LIDAR_DISTANCE = 4
 STEERING_MULTIPLIER = 3.3
 MINIMUM_SPEED = 15
 MAXIMUM_SPEED = 35
@@ -10,4 +10,4 @@ GAP_SELECTION = "deepest" # least_steering, widest, deepest, largest_integral
 POINT_SELECTION = "deepest" # lear_steering, middle, deepest
 MIN_GAP_SIZE = 10
 MIN_GAP_DISTANCE = 2
-CORNERING_DISTANCE = 0.1
+CORNERING_DISTANCE = 0.2
