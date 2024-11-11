@@ -30,7 +30,7 @@ class GapFinder:
 
         # NEW CODE TO FIX GAP SWITCHING; Initialize gap history
         self.previous_gaps = []
-        self.gap_history_size = 5 # change
+        self.gap_history_size = 6 # change
 
         self.og_min_gap_distance = min_gap_distance  # store orginial min gap distance
 
@@ -53,6 +53,20 @@ class GapFinder:
 
         # NEW CODE
 
+        # ----- 
+        # increase min_gap_distance if no valid gaps found
+        if not valid_gaps:
+            self.min_gap_distance += 0.5  # increase min gap distance in increments
+            if self.min_gap_distance > 2 * self.og_min_gap_distance:
+                self.min_gap_distance = self.og_min_gap_distance  # reset if maxed out
+            return 0, len(self.ranges) - 1  # default
+        
+        # reset min_gap_distance if valid gaps are found
+        self.min_gap_distance = self.og_min_gap_distance
+
+
+        # -----
+    
         # ADD GAPS TO GAP HISTORY, ENSURE IT FOLLOWS GAP HISTORY SIZE FOR MEMORY
         current_gap = self.gap_selection()
         self.previous_gaps.append(current_gap)
@@ -66,22 +80,12 @@ class GapFinder:
             # center of current gap
             current_gap_center = (current_gap[0] + current_gap[1]) / 2
             # if the current gap center differ to much from history 
-            threshold = len(self.ranges) * .25 # 25% OF LIDAR READING INDEX IS THRESHOLD
+            threshold = len(self.ranges) * .35 # 35% OF LIDAR READING INDEX IS THRESHOLD  
             if abs(current_gap_center - prev_gap_center) > threshold:
                 return self.previous_gaps[-2] # last stable gap we were using
         return current_gap
     
-        # increase min_gap_distance if no valid gaps found
-        if not valid_gaps:
-            self.min_gap_distance += 0.5  # increase min gap distance in increments
-            if self.min_gap_distance > 2 * self.og_min_gap_distance:
-                self.min_gap_distance = self.og_min_gap_distance  # reset if maxed out
-            return 0, len(self.ranges) - 1  # default
-        
-        # reset min_gap_distance if valid gaps are found
-        self.min_gap_distance = self.og_min_gap_distance
 
-        return self.gap_selection()
 
 
 
@@ -93,58 +97,59 @@ class GapFinder:
         min_index = self.get_index_of(0)
         max_index = self.get_index_of(180)
 
-        # close = 0
-        # for i in range(min_index, max_index):
-        #     if self.ranges[i] < self.cornering_distance:
-        #         close += 1
-        # if close > 10:
-        #     self.get_index_of(90)
+        close = 0
+        for i in range(min_index, max_index):
+            if self.ranges[i] < self.cornering_distance:
+                close += 1
+        if close > 10:
+            self.get_index_of(90)
 
         # ----
 
 
         # NEW COOOOOODE -0---- (cornering/turning)
 
-        CORNER_DETECTION_THRESHOLD = 20
-        CORNER_SEARCH_RANGE = 20
+        # center_index = self.get_index_of(90)
 
-        # count points that are too close
-        close_points = sum(1 for i in range(min_index, max_index) if self.ranges[i] < self.cornering_distance)
+        # CORNER_DETECTION_THRESHOLD = 15
+        # CORNER_SEARCH_RANGE = 30
 
-        # modified: only consider it a corner if we have more close points
-        if close_points > CORNER_DETECTION_THRESHOLD: # threshold = 20
-            # calculate a weighted point instead of jumping to 90 degree
-            center_index = self.get_index_of(90)
-            # find the furthest point within a reasonable range
-            search_start = max(start_i, center_index - CORNER_SEARCH_RANGE)
-            search_end = min(end_i, center_index + CORNER_SEARCH_RANGE)
+        # # count points that are too close
+        # close_points = sum(1 for i in range(min_index, max_index)
+        #                    if self.ranges[i] < self.cornering_distance)
+        # # modified: only consider it a corner if we have more close points
+        # if close_points > CORNER_DETECTION_THRESHOLD: # threshold = 20
+        #     # calculate a weighted point instead of jumping to 90 degree
+        #     center_index = self.get_index_of(90)
+        #     # find the furthest point within a reasonable range
+        #     search_start = max(start_i, center_index - CORNER_SEARCH_RANGE)          
+        #     search_end = min(end_i, center_index + CORNER_SEARCH_RANGE)
             
-            # get the point with maximum distance in our research range
-            if search_start < search_end:
-                max_dist_index = search_start + np.argmax(self.ranges[search_start:search_end])
-            else:
-                max_dist_index = search_start # or some other default handling
+        #     # get the point with maximum distance in our research range
 
-            # smooth the transition
-            target_angle = self.get_angle_from_index(max_dist_index)
-            smoothed_angle = self.smooth_steering(target_angle)
+        #     # smooth the transition
+        #     if search_start < search_end:
+                
+        #         max_dist_index = search_start + np.argmax(self.ranges[search_start::search_end])
+        #         target_angle = self.get_angle_from_index(max_dist_index)
+        #         smoothed_angle = self.smooth_steering(target_angle)
 
-            return self.get_index_of(smoothed_angle)
+        #         return self.get_index_of(smoothed_angle)
     
-        # if not cornering, use normal point selection
-        selected_point = self.point_selection(start_i, end_i)
+        # # if not cornering, use normal point selection
+        # selected_point = self.point_selection(start_i, end_i)
 
-        # smooth the tansition even in normal driving
-        target_angle = self.get_angle_from_index(selected_point)
-        smoothed_angle = self.smooth_steering(target_angle)
+        # # smooth the tansition even in normal driving
+        # target_angle = self.get_angle_from_index(selected_point)                                                                                                                                                                     
+        # smoothed_angle = self.smooth_steering(target_angle)
 
-        return self.get_index_of(smoothed_angle)
+        # return self.get_index_of(smoothed_angle)
     
 
     #---------
 
         # OLD CODE RETURN
-        # return self.point_selection(start_i, end_i) 
+        return self.point_selection(start_i, end_i) 
     
     # NEW CODE HELPER METHOD (cornering/turning)
     def get_angle_from_index(self, index):
