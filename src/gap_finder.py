@@ -120,7 +120,10 @@ class GapFinder:
             search_end = min(end_i, center_index + CORNER_SEARCH_RANGE)
             
             # get the point with maximum distance in our research range
-            max_dist_index = search_start + np.argmax(self.ranges[search_start:search_end])
+            if search_start < search_end:
+                max_dist_index = search_start + np.argmax(self.ranges[search_start:search_end])
+            else:
+                max_dist_index = search_start # or some other default handling
 
             # smooth the transition
             target_angle = self.get_angle_from_index(max_dist_index)
