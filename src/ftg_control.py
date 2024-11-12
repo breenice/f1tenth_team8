@@ -36,6 +36,7 @@ class FTGControl:
         self.no_gap_detected = 0
         
         self.ranges = None
+        self.prev_speed = 0
     
     def lidar_callback(self, data):
         """
@@ -49,6 +50,7 @@ class FTGControl:
         ranges = np.array(data.ranges)
         # TODO: We can also try linearly interpolating NaNs instead of setting to max distance
         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
+        ranges[ranges < 0.05] = MAX_LIDAR_DISTANCE
         # ranges = np.maximum(ranges+0.5,0)
 
         # disparity extension
@@ -56,17 +58,21 @@ class FTGControl:
         self.ranges = ranges
 
         # find largest gap and select the best point from that gap
-        self.gap_finder.update_data(ranges, data)
-        start_i, end_i = self.gap_finder.get_gap()
-        best_point = self.gap_finder.get_point(start_i, end_i)
-        # best_point = self.gap_finder.get_point_to_go_to(data) # This does the same as above, but in one line
+        try:
+            self.gap_finder.update_data(ranges, data)
+            start_i, end_i = self.gap_finder.get_gap()
+            best_point = self.gap_finder.get_point(start_i, end_i)
+            # best_point = self.gap_finder.get_point_to_go_to(data) # This does the same as above, but in one line
 
-        # calculate steering angle towards best point
-        steering_angle = self.get_steering_angle(best_point, data)
+            # calculate steering angle towards best point
+            steering_angle = self.get_steering_angle(best_point, data)
+            speed = self.dynamic_velocity(steering_angle)
 
-        # publish
-        self.publish_drive(steering_angle)
-        self.publish_gap_points(data, start_i, end_i)
+            # publish
+            self.publish_drive(speed, steering_angle)
+            self.publish_gap_points(data, start_i, end_i)
+        except:
+            self.publish_drive(0, 0)
         self.publish_lidar(data, ranges)
 
     # TODO: This probably needs tuning
@@ -82,7 +88,7 @@ class FTGControl:
         angle = idx * data.angle_increment + angle_min
         return math.degrees(angle)
 
-    def publish_drive(self, steering_angle):
+    def publish_drive(self, speed, steering_angle):
         """
         publish to AckermannDrive with our calculated steering angle
         """
@@ -96,7 +102,8 @@ class FTGControl:
         # #command.speed = self.dynamic_velocity(steering_angle)
 
         # set speed for no gaps dtected for car to slow down or to defult
-        command.speed = self.better_dynamic_velocity()
+        command.speed = min(self.prev_speed + 5, speed)
+        self.prev_speed = command.speed
 
         # publish drive command
         self.drive_pub.publish(command)
@@ -119,7 +126,7 @@ class FTGControl:
         abs_angle = abs(steering_angle)
 
         # # gradually slow speed as the steering angle increases (sharp turn)
-        speed = np.interp(abs_angle, [30, 100], [MAXIMUM_SPEED, MINIMUM_SPEED])
+        speed = np.interp(abs_angle, [0, 100], [MAXIMUM_SPEED, MINIMUM_SPEED])
 
         return speed
     
@@ -131,6 +138,8 @@ class FTGControl:
         closest = np.min(new_ranges[min_index : max_index])
 
         speed = np.interp(closest, [0.25, MAX_LIDAR_DISTANCE], [MINIMUM_SPEED, MAXIMUM_SPEED])
+        # print(closest, speed)
+
 
         return speed
 

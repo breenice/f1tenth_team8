@@ -29,11 +29,13 @@ class DisparityExtender:
         if obstacle_distance < 0.5:
             return int(self._safety_extension * 3)
         elif obstacle_distance < 0.75:
-            return int(self._safety_extension * 2)
+            return int(self._safety_extension * 2.5)
         elif obstacle_distance < 1:
-            return int(self._safety_extension * 1.7)
+            return int(self._safety_extension * 1.75)
+        elif obstacle_distance < 1.5:
+            return int(self._safety_extension * 0.75)
         elif obstacle_distance < 2.0:
-            return int(self._safety_extension * 1.2)
+            return int(self._safety_extension * 0.5)
         else:
             return self._safety_extension
     
@@ -54,6 +56,7 @@ class DisparityExtender:
             # detect disparity by checking if the distance change is greater than the safety radius
             if original_ranges[i] - original_ranges[i + 1] > self.disparity:
                 obstacle_distance = original_ranges[i+ 1]
+                if obstacle_distance < 0.05: break
                 dynamic_extension = self.dynamic_extension(obstacle_distance, angle_increment)
                 # print(obstacle_distance, dynamic_extension)
                 # dynsmic extension based on distance
@@ -68,6 +71,7 @@ class DisparityExtender:
             # detect a disparity ^ same way
             if original_ranges[i] - original_ranges[i - 1] > self.disparity:
                 obstacle_distance = original_ranges[i-1]
+                if obstacle_distance < 0.05: break
                 dynamic_extension = self.dynamic_extension(obstacle_distance, angle_increment)
                 # print(obstacle_distance, dynamic_extension)
                 end_idx = min(len(ranges), i + int(dynamic_extension))

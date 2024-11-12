@@ -98,7 +98,7 @@ class GapFinder:
             # if the current gap center differ to much from history 
             threshold = len(self.ranges) * .35 # 35% OF LIDAR READING INDEX IS THRESHOLD  
             if abs(current_gap_center - prev_gap_center) > threshold:
-                return valid_gaps[0]
+                # return valid_gaps[0]
                 return self.previous_gaps[-2] # last stable gap we were using
         return current_gap
     
@@ -122,16 +122,16 @@ class GapFinder:
             print("cornering")
             return self.get_index_of(90)
         
-        min_index = self.get_index_of(0)
-        max_index = self.get_index_of(90)
+        # min_index = self.get_index_of(0)
+        # max_index = self.get_index_of(90)
 
-        close = 0
-        for i in range(min_index, max_index):
-            if 0.05 < self.ranges[i] < self.cornering_distance:
-                close += 1
-        if close > 10:
-            print("cornering")
-            return self.get_index_of(90)
+        # close = 0
+        # for i in range(min_index, max_index):
+        #     if 0.05 < self.ranges[i] < self.cornering_distance:
+        #         close += 1
+        # if close > 10:
+        #     print("cornering")
+        #     return self.get_index_of(90)
             
 
         # ----
@@ -275,14 +275,16 @@ class GapFinder:
     
     def find_deepest_then_widest_then_left_gap(self):
         valid_gaps = self.get_gaps()
+        center_index = self.get_index_of(90)
 
         if not valid_gaps:
             rospy.logwarn("No valid gaps detected")
+            raise ValueError()
             return 0, len(self.ranges) - 1  # default to full range if no valid gaps
 
         def sort_key(x):
             gap = self.ranges[x[0]: x[-1]+1]
-            return (max(gap), len(gap) - (len(gap) % 25), -gap[0])
+            return (max(gap), len(gap) - (len(gap) % 50), -abs(center_index-gap[0]))
         
         sorted_gaps = sorted(valid_gaps, key=sort_key)
 
