@@ -34,6 +34,8 @@ class FTGControl:
     
         # count for frames w/o gaps
         self.no_gap_detected = 0
+        
+        self.ranges = None
     
     def lidar_callback(self, data):
         """
@@ -51,6 +53,7 @@ class FTGControl:
 
         # disparity extension
         ranges = self.disparity_extender.extend_disparities(ranges, data.angle_increment)
+        self.ranges = ranges
 
         # find largest gap and select the best point from that gap
         self.gap_finder.update_data(ranges, data)
@@ -93,7 +96,7 @@ class FTGControl:
         # #command.speed = self.dynamic_velocity(steering_angle)
 
         # set speed for no gaps dtected for car to slow down or to defult
-        command.speed = self.dynamic_velocity(steering_angle)
+        command.speed = self.better_dynamic_velocity()
 
         # publish drive command
         self.drive_pub.publish(command)
@@ -117,6 +120,17 @@ class FTGControl:
 
         # # gradually slow speed as the steering angle increases (sharp turn)
         speed = np.interp(abs_angle, [30, 100], [MAXIMUM_SPEED, MINIMUM_SPEED])
+
+        return speed
+    
+    def better_dynamic_velocity(self):
+        min_index = self.gap_finder.get_index_of(40)
+        max_index = self.gap_finder.get_index_of(140)
+        new_ranges = self.ranges
+        new_ranges[new_ranges < 0.1] = 10
+        closest = np.min(new_ranges[min_index : max_index])
+
+        speed = np.interp(closest, [0.25, MAX_LIDAR_DISTANCE], [MINIMUM_SPEED, MAXIMUM_SPEED])
 
         return speed
 

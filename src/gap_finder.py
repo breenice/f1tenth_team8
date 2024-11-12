@@ -10,13 +10,15 @@ class GapFinder:
             "deepest" : self.find_deepest_gap,
             "widest": self.find_widest_gap,
             "least_steering": self.find_least_steering_gap,
-            "largest_integral": self.find_largest_integral_gap
+            "largest_integral": self.find_largest_integral_gap,
+            "best" : self.find_deepest_then_widest_then_left_gap
         }
 
         point_selection_functions = {
             "deepest": self.find_deepest_point,
             "middle": self.find_middle_point,
-            "least_steering": self.find_least_steering_point
+            "least_steering": self.find_least_steering_point,
+            "best" : self.find_deepest_then_middle_point
         }
 
         self.gap_selection = gap_selection_functions[gap_selection]
@@ -31,7 +33,7 @@ class GapFinder:
 
         # NEW CODE TO FIX GAP SWITCHING; Initialize gap history
         self.previous_gaps = []
-        self.gap_history_size = 8 # change (27 memory read in 3.5 sec)
+        self.gap_history_size = 6 # change (27 memory read in 3.5 sec)
 
         self.og_min_gap_distance = min_gap_distance  # store orginial min gap distance
 
@@ -57,13 +59,22 @@ class GapFinder:
         # ----- 
         # increase min_gap_distance if no valid gaps found
 
-        print(self.i)
-        self.i += 1
-        
-        if not valid_gaps:
+            
+        while not valid_gaps:
             self.min_gap_distance -= .025  # increase min gap distance in increments
             if self.min_gap_distance > 2 * self.og_min_gap_distance:
                 self.min_gap_distance = self.og_min_gap_distance  # reset if maxed out
+            # if min(self.ranges)  > 6:
+            #min_index = self.get_index_of(0)
+            #max_index = self.get_index_of(90)
+
+            #close = 0
+            #for i in range(min_index, max_index):
+            #    if self.ranges[i] < self.cornering_distance:
+            #        close += 1
+            #if close > 5:
+            #    print("cornering")
+            #    return self.get_index_of(90)
             return 0, len(self.ranges) - 1  # default
         
         # reset min_gap_distance if valid gaps are found
@@ -85,7 +96,7 @@ class GapFinder:
             # center of current gap
             current_gap_center = (current_gap[0] + current_gap[1]) / 2
             # if the current gap center differ to much from history 
-            threshold = len(self.ranges) * .25 # 35% OF LIDAR READING INDEX IS THRESHOLD  
+            threshold = len(self.ranges) * .35 # 35% OF LIDAR READING INDEX IS THRESHOLD  
             if abs(current_gap_center - prev_gap_center) > threshold:
                 return valid_gaps[0]
                 return self.previous_gaps[-2] # last stable gap we were using
@@ -105,9 +116,20 @@ class GapFinder:
 
         close = 0
         for i in range(min_index, max_index):
-            if self.ranges[i] < self.cornering_distance:
+            if 0.05 < self.ranges[i] < self.cornering_distance:
                 close += 1
-        if close > 5:
+        if close > 10:
+            print("cornering")
+            return self.get_index_of(90)
+        
+        min_index = self.get_index_of(0)
+        max_index = self.get_index_of(90)
+
+        close = 0
+        for i in range(min_index, max_index):
+            if 0.05 < self.ranges[i] < self.cornering_distance:
+                close += 1
+        if close > 10:
             print("cornering")
             return self.get_index_of(90)
             
@@ -212,6 +234,27 @@ class GapFinder:
         """
         # return index of the best point
         return np.argmax(self.ranges[start_i:end_i + 1]) + start_i
+    
+
+    def find_deepest_then_middle_point(self, start_i, end_i):
+        deepest_value = max(self.ranges[start_i:end_i + 1])
+
+        # find number of points that are equal to deepest value
+        num_at_max = 0
+        for i in range(start_i, end_i+1):
+            if self.ranges[i] == deepest_value:
+                num_at_max += 1
+
+        middle_index = int(num_at_max / 2) + 1 # middle point but round up
+
+        # go to the nth instance of deepest point, where n is in the middle
+        cur_index = 0
+        for i in range(start_i, end_i+1):
+            if self.ranges[i] == deepest_value:
+                cur_index += 1
+                if cur_index == middle_index:
+                    return i
+                
 
 
 
@@ -229,6 +272,25 @@ class GapFinder:
         largest_gap = max(valid_gaps, key=lambda x : x[-1] - x[0])
 
         return largest_gap[0], largest_gap[-1]
+    
+    def find_deepest_then_widest_then_left_gap(self):
+        valid_gaps = self.get_gaps()
+
+        if not valid_gaps:
+            rospy.logwarn("No valid gaps detected")
+            return 0, len(self.ranges) - 1  # default to full range if no valid gaps
+
+        def sort_key(x):
+            gap = self.ranges[x[0]: x[-1]+1]
+            return (max(gap), len(gap) - (len(gap) % 25), -gap[0])
+        
+        sorted_gaps = sorted(valid_gaps, key=sort_key)
+
+        # find largest gap based on its length, then return start and end indices of the largest gap
+        largest_gap = sorted_gaps[-1]
+
+        return largest_gap[0], largest_gap[-1]
+
 
 
     def find_deepest_gap(self):
@@ -335,6 +397,13 @@ class GapFinder:
         
         # Filter out small gaps
         valid_gaps = self.filter_gaps(gaps)
+
+        min_gap_distance = self.min_gap_distance
+        while len(valid_gaps) == 0 and min_gap_distance > 0:
+            min_gap_distance -= 0.25
+            too_close = np.where(self.ranges < self.min_gap_distance)[0]
+            gaps = np.split(np.arange(len(self.ranges)), too_close)
+            valid_gaps = self.filter_gaps(gaps)
 
         return valid_gaps
     

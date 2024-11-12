@@ -27,7 +27,7 @@ class DisparityExtender:
 
 
         if obstacle_distance < 0.5:
-            return int(self._safety_extension * 2.5)
+            return int(self._safety_extension * 3)
         elif obstacle_distance < 0.75:
             return int(self._safety_extension * 2)
         elif obstacle_distance < 1:
