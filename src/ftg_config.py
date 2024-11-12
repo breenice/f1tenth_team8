@@ -4,10 +4,10 @@ MINIMUM_SPEED = 15
 MAXIMUM_SPEED = 35
 
 DISPARITY_DISTANCE = 0.3
-SAFETY_EXTENSION = 35
+SAFETY_EXTENSION = 25
 
 GAP_SELECTION = "deepest" # least_steering, widest, deepest, largest_integral
 POINT_SELECTION = "deepest" # lear_steering, middle, deepest
 MIN_GAP_SIZE = 10
-MIN_GAP_DISTANCE = 2
-CORNERING_DISTANCE = 0.2
+MIN_GAP_DISTANCE = 2.25
+CORNERING_DISTANCE = 0

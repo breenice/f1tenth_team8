@@ -27,10 +27,11 @@ class GapFinder:
 
         self.ranges = None
         self.data = None
+        self.i = 0
 
         # NEW CODE TO FIX GAP SWITCHING; Initialize gap history
         self.previous_gaps = []
-        self.gap_history_size = 2 # change
+        self.gap_history_size = 8 # change (27 memory read in 3.5 sec)
 
         self.og_min_gap_distance = min_gap_distance  # store orginial min gap distance
 
@@ -55,6 +56,10 @@ class GapFinder:
 
         # ----- 
         # increase min_gap_distance if no valid gaps found
+
+        print(self.i)
+        self.i += 1
+        
         if not valid_gaps:
             self.min_gap_distance -= .025  # increase min gap distance in increments
             if self.min_gap_distance > 2 * self.og_min_gap_distance:
@@ -80,8 +85,9 @@ class GapFinder:
             # center of current gap
             current_gap_center = (current_gap[0] + current_gap[1]) / 2
             # if the current gap center differ to much from history 
-            threshold = len(self.ranges) * .4 # 35% OF LIDAR READING INDEX IS THRESHOLD  
+            threshold = len(self.ranges) * .25 # 35% OF LIDAR READING INDEX IS THRESHOLD  
             if abs(current_gap_center - prev_gap_center) > threshold:
+                return valid_gaps[0]
                 return self.previous_gaps[-2] # last stable gap we were using
         return current_gap
     
