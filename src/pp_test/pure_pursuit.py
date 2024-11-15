@@ -70,35 +70,45 @@ def purepursuit_control_node(data):
     odom_y = data.pose.position.y
 
 
+
     # TODO 1: The reference path is stored in the 'plan' array.
     # Your task is to find the base projection of the car on this reference path.
     # The base projection is defined as the closest point on the reference path to the car's current position.
     # Calculate the index and position of this base projection on the reference path.
     
     # Your code here
-    closest_dist = float('inf')  
-    closest_index = 0
-
-    for i, waypoint in enumerate(plan):
-        dx = waypoint[0] - odom_x
-        dy = waypoint[1] - odom_y
-        sq_dist = dx ** 2 + dy ** 2 
-
-        if sq_dist < closest_dist:
-            closest_dist = sq_dist
-            closest_index = i
-
-    pose_x, pose_y = plan[closest_index]
-
+    # more info in lec 14 on the base projection 
+    # trying to find the base projection which should be the closest point on the path to the car's current position
     
+    # initizalize min_dist to infinity for comparison purposes so that we can always find the smallest dist later 
+    min_dist = float('inf')
+    base_projection_index = 0 # index to store waypoint on the path
+    # loop over all the waypoints in the ref path and check which is closest to car
+    for index, point in enumerate(plan): 
+        # calc difference in x and y positions (car position - curr waypoint) 
+        dx = odom_x - point[0]
+        dy = odom_y - point[1]
+        # calc euclidean dist between car pos and curr waypoint
+        distance = math.sqrt(dx**2 + dy**2)
+        # update min_dist and index if necessary, if euclidean dist is smaller 
+        if distance < min_dist:
+            min_dist = distance
+            base_projection_index = index
+    # get the coordinates for base projection
+    pose_x, pose_y = plan[base_projection_index][0], plan[base_projection_index][1]
+
+
+
     # Calculate heading angle of the car (in radians)
     heading = tf.transformations.euler_from_quaternion((data.pose.orientation.x,
                                                         data.pose.orientation.y,
                                                         data.pose.orientation.z,
                                                         data.pose.orientation.w))[2]
-    
+
+
 
     # TODO 2: You need to tune the value of the lookahead_distance
+    # i left this at the default/skeleton code value bc we can tune when we test 
     lookahead_distance = 1.0
 
 
@@ -108,19 +118,54 @@ def purepursuit_control_node(data):
     # Calculate the position of this goal/target point along the path.
 
     # Your code here
+    # set target to the closest point ahead of the car which we found previousy above ^^
+    target_index = base_projection_index
+    total_dist = 0 # keep track of total dist we've moved
+    # loop through waypoints along our path until total_dist is at least lookahead_distance and we havent reached end 
+    while total_dist < lookahead_distance and target_index < len(plan) - 1:
+        # calc dist btwn the two waypoints
+        dx = plan[target_index + 1][0] - plan[target_index][0]
+        dy = plan[target_index + 1][1] - plan[target_index][1]
+        # adds the straight-line distance btwn the curr waypoint and next waypoint to total_dist
+        total_dist += math.sqrt(dx**2 + dy**2)
+        target_index += 1 # move through index
+    # target coordiantes for where we want the car to go to next bc they're just far enough past lookahead dist without overshooting
+    target_x, target_y = plan[target_index][0], plan[target_index][1]
 
 
     # TODO 4: Implement the pure pursuit algorithm to compute the steering angle given the pose of the car, target point, and lookahead distance.
     # Your code here
-
+    # calc angle btwn car's curr direction and target point
+    # short info on formula below but its mostly in lec 14 lol
+    # explanation:
+    # math.atan2(target_y - odom_y, target_x - odom_x): calc angle of the line from the car's position to the target point relative to the x-axis
+    # subtracting 'heading' accounts for the car's curr orientation, which gives alpha (the misalignment angle)
+    # alpha tells us how much the car needs to turn to face the target point (left = pos, right = neg lmao)
+    alpha = math.atan2(target_y - odom_y, target_x - odom_x) - heading
+    # WHEELBASE_LEN: dist btwn the car's front and rear wheels since it affects how sharply the car can turn
+    # math.sin(alpha): measure how far off the car is from being aligned with the target point (lateral error)
+    # lookahead_distance: dist to target point - larger lookahead should have smoother & less reactive paths i think
+    # basically this: larger alpha -> more misaligned -> larger steering angle -> sharper turn
+    steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), lookahead_distance)
 
     # TODO 5: Ensure that the calculated steering angle is within the STEERING_RANGE and assign it to command.steering_angle
     # Your code here    
-    command.steering_angle = 0.0
+    # command.steering_angle = 0.0
+    # check within range and then assign 
+    steering_angle = max(-STEERING_RANGE, min(STEERING_RANGE, steering_angle))
+    command.steering_angle = steering_angle
 
     # TODO 6: Implement Dynamic Velocity Scaling instead of a constant speed
-    command.speed = 20.0
-    command_pub.publish(command)
+    # command.speed = 20.0
+    # command_pub.publish(command)
+    # basically what we did in ftg algo and also without dealing with numpy 
+    max_speed = 40.0  
+    min_speed = 10.0 
+    abs_steering_angle = abs(steering_angle)
+    if abs_steering_angle >= 100:
+        command.speed = min_speed
+    else:
+        command.speed = max_speed - ((abs_steering_angle / 100.0) * (max_speed - min_speed))
 
     # Visualization code
     # Make sure the following variables are properly defined in your TODOs above:
