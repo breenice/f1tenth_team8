@@ -76,6 +76,19 @@ def purepursuit_control_node(data):
     # Calculate the index and position of this base projection on the reference path.
     
     # Your code here
+    closest_dist = float('inf')  
+    closest_index = 0
+
+    for i, waypoint in enumerate(plan):
+        dx = waypoint[0] - odom_x
+        dy = waypoint[1] - odom_y
+        sq_dist = dx ** 2 + dy ** 2 
+
+        if sq_dist < closest_dist:
+            closest_dist = sq_dist
+            closest_index = i
+
+    pose_x, pose_y = plan[closest_index]
 
     
     # Calculate heading angle of the car (in radians)
