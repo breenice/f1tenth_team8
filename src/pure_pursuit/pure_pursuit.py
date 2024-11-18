@@ -12,6 +12,8 @@ from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PoseStamped
 import tf
 
+from pp_config import *
+
 # Global variables for storing the path, path resolution, frame ID, and car details
 plan                = []
 path_resolution     = []
@@ -58,9 +60,6 @@ WHEELBASE_LEN       = 0.325
 
 def purepursuit_control_node(data):
     # Main control function for pure pursuit algorithm
-
-    # Create an empty ackermann drive message that we will populate later with the desired steering angle and speed.
-    command = AckermannDrive()
 
     global wp_seq
     global curr_polygon
@@ -120,52 +119,70 @@ def purepursuit_control_node(data):
     # Your code here
     # set target to the closest point ahead of the car which we found previousy above ^^
     target_index = base_projection_index
-    total_dist = 0 # keep track of total dist we've moved
-    # loop through waypoints along our path until total_dist is at least lookahead_distance and we havent reached end 
-    while total_dist < lookahead_distance and target_index < len(plan) - 1:
-        # calc dist btwn the two waypoints
-        dx = plan[target_index + 1][0] - plan[target_index][0]
-        dy = plan[target_index + 1][1] - plan[target_index][1]
+    # loop through waypoints along our path until target point is at least lookahead_distance away and we havent
+    # reached end
+    while target_index < len(plan) - 1:
+        # calc dist btwn car and current target
+        dx = odom_x - plan[target_index][0]
+        dy = odom_y - plan[target_index][1]
         # adds the straight-line distance btwn the curr waypoint and next waypoint to total_dist
-        total_dist += math.sqrt(dx**2 + dy**2)
-        target_index += 1 # move through index
-    # target coordiantes for where we want the car to go to next bc they're just far enough past lookahead dist without overshooting
+        target_point_distance = math.sqrt(dx**2 + dy**2)
+        if target_point_distance >= lookahead_distance:
+            break
+
+        target_index += 1  # move through index
+
+    # TODO: Make this interpolate if target point is beyond lookahead distance
+    # target coordiantes for where we want the car to go to next bc they're just far enough past lookahead dist
+    # without overshooting
     target_x, target_y = plan[target_index][0], plan[target_index][1]
 
 
     # TODO 4: Implement the pure pursuit algorithm to compute the steering angle given the pose of the car, target point, and lookahead distance.
     # Your code here
-    # calc angle btwn car's curr direction and target point
-    # short info on formula below but its mostly in lec 14 lol
-    # explanation:
-    # math.atan2(target_y - odom_y, target_x - odom_x): calc angle of the line from the car's position to the target point relative to the x-axis
-    # subtracting 'heading' accounts for the car's curr orientation, which gives alpha (the misalignment angle)
-    # alpha tells us how much the car needs to turn to face the target point (left = pos, right = neg lmao)
+
+    """
+    calc angle btwn car's curr direction and target point
+    short info on formula below but its mostly in lec 14 lol
+    explanation:
+    math.atan2(target_y - odom_y, target_x - odom_x): calc angle of the line from the car's position to the target point relative to the x-axis
+    subtracting 'heading' accounts for the car's curr orientation, which gives alpha (the misalignment angle)
+    alpha tells us how much the car needs to turn to face the target point (left = pos, right = neg lmao)
+    """
     alpha = math.atan2(target_y - odom_y, target_x - odom_x) - heading
-    # WHEELBASE_LEN: dist btwn the car's front and rear wheels since it affects how sharply the car can turn
-    # math.sin(alpha): measure how far off the car is from being aligned with the target point (lateral error)
-    # lookahead_distance: dist to target point - larger lookahead should have smoother & less reactive paths i think
-    # basically this: larger alpha -> more misaligned -> larger steering angle -> sharper turn
+
+    # alternative equation from slides
+    # alpha = math.asin(target_y - odom_y, lookahead_distance)
+
+    """
+    WHEELBASE_LEN: dist btwn the car's front and rear wheels since it affects how sharply the car can turn
+    math.sin(alpha): measure how far off the car is from being aligned with the target point (lateral error)
+    lookahead_distance: dist to target point - larger lookahead should have smoother & less reactive paths i think
+    basically this: larger alpha -> more misaligned -> larger steering angle -> sharper turn
+
+    """
     steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), lookahead_distance)
+
+    command = AckermannDrive()
 
     # TODO 5: Ensure that the calculated steering angle is within the STEERING_RANGE and assign it to command.steering_angle
     # Your code here    
     # command.steering_angle = 0.0
-    # check within range and then assign 
+    # check within range and then assign
     steering_angle = max(-STEERING_RANGE, min(STEERING_RANGE, steering_angle))
     command.steering_angle = steering_angle
 
     # TODO 6: Implement Dynamic Velocity Scaling instead of a constant speed
     # command.speed = 20.0
     # command_pub.publish(command)
-    # basically what we did in ftg algo and also without dealing with numpy 
-    max_speed = 40.0  
-    min_speed = 10.0 
+    # basically what we did in ftg algo and also without dealing with numpy
     abs_steering_angle = abs(steering_angle)
     if abs_steering_angle >= 100:
-        command.speed = min_speed
+        command.speed = MIN_SPEED
     else:
-        command.speed = max_speed - ((abs_steering_angle / 100.0) * (max_speed - min_speed))
+        command.speed = MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
+
+    command_pub.publish(command)
 
     # Visualization code
     # Make sure the following variables are properly defined in your TODOs above:
@@ -174,10 +191,10 @@ def purepursuit_control_node(data):
     # - target_x, target_y: Position of the goal/target point
 
     # These are set to zero only so that the template code builds. 
-    pose_x=0    
-    pose_y=0
-    target_x=0
-    target_y=0
+    # pose_x = 0
+    # pose_y = 0
+    # target_x = 0
+    # target_y = 0
 
 
     base_link    = Point32()
