@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-import rospy
 import os
-import sys
 import csv
 import math
-from ackermann_msgs.msg import AckermannDrive
-from geometry_msgs.msg import PolygonStamped
-from geometry_msgs.msg import Point32
-from geometry_msgs.msg import PoseStamped
-import tf
+
 
 WHEELBASE_LEN = 0.325
 

@@ -2,10 +2,7 @@
 
 # Import necessary libraries
 import rospy
-import os
 import sys
-import csv
-import math
 from ackermann_msgs.msg import AckermannDrive
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
@@ -15,9 +12,9 @@ import tf
 from pp_config import *
 from pure_pursuit import PurePursuit
 
-
 # Steering Range from -100.0 to 100.0
 STEERING_RANGE = 100.0
+
 
 class PurePursuitControl:
     def __init__(self):
