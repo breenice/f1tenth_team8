@@ -26,7 +26,7 @@ class PurePursuit:
 
         # TODO: Modify this path to match the folder where the csv file containing the path is located.
         file_path = os.path.expanduser(
-            '/home/nvidia/depend_ws/src/f1tenth_purepursuit/path/{}.csv'.format(trajectory_name))
+            '/home/volta/depend_ws/src/f1tenth_purepursuit/path/{}.csv'.format(trajectory_name))
 
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
@@ -43,12 +43,12 @@ class PurePursuit:
             dy = self.plan[index][1] - self.plan[index - 1][1]
             self.path_resolution.append(math.sqrt(dx * dx + dy * dy))
 
-    def pure_pursuit(self, odom_x, odom_y):
+    def pure_pursuit(self, odom_x, odom_y, heading):
         self.odom = (odom_x, odom_y)
 
         base_proj_index = self.get_base_projection()
         self.get_lookahead_point(base_proj_index)
-        return self.get_steering_angle()
+        return self.get_steering_angle(heading)
 
     def get_base_projection(self):
         """
@@ -84,9 +84,9 @@ class PurePursuit:
         # TODO: Make this interpolate if target point is beyond lookahead distance
         # target coordiantes for where we want the car to go to next bc they're just far enough past lookahead dist
         # without overshooting
-        self.target = (self.plan[target_index][0], self.plan[target_index][1])
+        self.target = (self.plan[target_index-1][0], self.plan[target_index-1][1])
 
-    def get_steering_angle(self):
+    def get_steering_angle(self, heading):
         """
         Compute the steering angle given the pose of the car, target point, and lookahead distance
         """
@@ -102,10 +102,10 @@ class PurePursuit:
         subtracting 'heading' accounts for the car's curr orientation, which gives alpha (the misalignment angle)
         alpha tells us how much the car needs to turn to face the target point (left = pos, right = neg lmao)
         """
-        # alpha = math.atan2(self.target[1] - self.odom[1], self.target[0] - self.odom[0]) - heading
+        alpha = math.atan2(self.target[1] - self.odom[1] ,  self.target[0] - self.odom[0]) - heading
 
         # alternative equation from slides
-        alpha = math.asin(self.target[1] - self.odom[1] / self.lookahead_distance)
+        # alpha = math.asin(self.odom[1] - self.target[1] / self.lookahead_distance)
 
         """
         WHEELBASE_LEN: dist btwn the car's front and rear wheels since it affects how sharply the car can turn
@@ -115,6 +115,8 @@ class PurePursuit:
     
         """
         steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), self.lookahead_distance)
+        steering_angle = math.degrees(steering_angle)
+        print("Alpha:", alpha, "Steering Angle:", steering_angle)
 
         return steering_angle
 

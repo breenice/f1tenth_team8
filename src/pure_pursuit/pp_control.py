@@ -44,22 +44,25 @@ class PurePursuitControl:
         car_name = "car_8"
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(car_name), PoseStamped,
                          self.pure_pursuit_control)
+        
+        rospy.loginfo("Ready for pure pursuit")
 
     def pure_pursuit_control(self, data):
         # Obtain the current position of the race car from the inferred_pose message
         odom_x = data.pose.position.x
         odom_y = data.pose.position.y
 
-        steering_angle = self.pp.pure_pursuit(odom_x, odom_y)
-
-        pose_x, pose_y = self.pp.base_proj
-        target_x, target_y = self.pp.target
-
         # Calculate heading angle of the car (in radians)
         heading = tf.transformations.euler_from_quaternion((data.pose.orientation.x,
                                                             data.pose.orientation.y,
                                                             data.pose.orientation.z,
                                                             data.pose.orientation.w))[2]
+
+
+        steering_angle = self.pp.pure_pursuit(odom_x, odom_y, heading)
+
+        pose_x, pose_y = self.pp.base_proj
+        target_x, target_y = self.pp.target
 
         command = AckermannDrive()
 
