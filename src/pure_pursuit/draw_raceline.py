@@ -33,12 +33,12 @@ def onclick(event):
 
 # Function to save the clicked points to a CSV file, adjusted for map coordinates
 def save_race_line(filename='race_line.csv'):
-    with open(filename, mode='w', newline='') as file:
+    with open(filename, mode='w') as file:
         writer = csv.writer(file)
         for x_img, y_img in zip(x_clicked, y_clicked):
             x_map, y_map = image_to_map_coordinates(x_img, y_img, origin_x, origin_y, resolution)
             writer.writerow([x_map, y_map, 0.0, 1.0])  # Assigning a constant speed of 1.0 for demonstration
-    print(f"Race line saved to {filename}.")
+    print("Race line saved to", filename)
 
 # Set up the plot
 fig, ax = plt.subplots()

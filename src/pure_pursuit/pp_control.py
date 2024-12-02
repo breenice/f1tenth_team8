@@ -21,7 +21,7 @@ class PurePursuitControl:
         # Global variables for storing the path, path resolution, frame ID, and car details
         self.frame_id = 'map'
         self.car_name = "car_8"  # str(sys.argv[1])
-        self.trajectory_name = str(sys.argv[2])
+        self.trajectory_name = str(rospy.get_param("~raceline", "raceline_far")) # str(sys.argv[2])
 
         # Publishers for sending driving commands and visualizing the control polygon
         self.command_pub = rospy.Publisher('/{}/offboard/command'.format(self.car_name), AckermannDrive, queue_size=1)
@@ -32,7 +32,7 @@ class PurePursuitControl:
         self.wp_seq = 0
         self.control_polygon = PolygonStamped()
 
-        self.pp = PurePursuit(LOOKAHEAD_DISTANCE)
+        self.pp = PurePursuit(LOOKAHEAD_DISTANCE, VELOCITY_LOOKAHEAD_DISTANCE, MIN_SPEED, MAX_SPEED)
         self.setup()
 
     def setup(self):
@@ -80,6 +80,7 @@ class PurePursuitControl:
             command.speed = MIN_SPEED
         else:
             command.speed = MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
+        # command.speed = self.pp.get_dynamic_velo()
 
         self.command_pub.publish(command)
         self.publish_rviz_markers(odom_x, odom_y, pose_x, pose_y, target_x, target_y)

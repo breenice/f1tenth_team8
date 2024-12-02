@@ -9,15 +9,21 @@ WHEELBASE_LEN = 0.325
 
 
 class PurePursuit:
-    def __init__(self, lookahead_distance):
+    def __init__(self, lookahead_distance, velo_lookahead_distance, min_speed, max_speed):
         self.lookahead_distance = lookahead_distance
+        self.velo_lookahead_distance = velo_lookahead_distance
+        self.min_speed = min_speed
+        self.max_speed = max_speed
 
         self.plan = []
         self.path_resolution = []
 
         self.odom = None
         self.base_proj = None
+        self.base_proj_index = None
         self.target = None
+
+        self.heading = None
 
     def construct_path(self, trajectory_name):
         """
@@ -45,10 +51,11 @@ class PurePursuit:
 
     def pure_pursuit(self, odom_x, odom_y, heading):
         self.odom = (odom_x, odom_y)
+        self.heading = heading
 
-        base_proj_index = self.get_base_projection()
-        self.get_lookahead_point(base_proj_index)
-        return self.get_steering_angle(heading)
+        self.get_base_projection()
+        self.get_lookahead_point()
+        return self.get_steering_angle()
 
     def get_base_projection(self):
         """
@@ -66,14 +73,14 @@ class PurePursuit:
                 base_projection_index = index
         # get the coordinates for base projection
         self.base_proj = (self.plan[base_projection_index][0], self.plan[base_projection_index][1])
-        return base_projection_index
+        self.base_proj_index = base_projection_index
 
-    def get_lookahead_point(self, base_proj_index):
+    def get_lookahead_point(self):
         """
         Follow path starting from base_projection and get first point that is lookahead_distance away
         """
         # TODO 3: Utilizing the base projection found in TODO 1, your next task is to identify the goal or target point for the car.
-        target_index = base_proj_index
+        target_index = self.base_proj_index
         # loop through waypoints along our path until target point is at least lookahead_distance away and we havent
         # reached end
         while target_index < len(self.plan) - 1:
@@ -86,7 +93,7 @@ class PurePursuit:
         # without overshooting
         self.target = (self.plan[target_index-1][0], self.plan[target_index-1][1])
 
-    def get_steering_angle(self, heading):
+    def get_steering_angle(self):
         """
         Compute the steering angle given the pose of the car, target point, and lookahead distance
         """
@@ -102,7 +109,7 @@ class PurePursuit:
         subtracting 'heading' accounts for the car's curr orientation, which gives alpha (the misalignment angle)
         alpha tells us how much the car needs to turn to face the target point (left = pos, right = neg lmao)
         """
-        alpha = math.atan2(self.target[1] - self.odom[1] ,  self.target[0] - self.odom[0]) - heading
+        alpha = math.atan2(self.target[1] - self.odom[1] ,  self.target[0] - self.odom[0]) - self.heading
 
         # alternative equation from slides
         # alpha = math.asin(self.odom[1] - self.target[1] / self.lookahead_distance)
@@ -119,6 +126,31 @@ class PurePursuit:
         print("Alpha:", alpha, "Steering Angle:", steering_angle)
 
         return steering_angle
+    
+    def get_dynamic_velo(self):
+        velo_index = self.base_proj_index
+        dist = 0
+        while dist < self.velo_lookahead_distance:
+            velo_index = (velo_index + 1) % len(self.plan)
+            dist = self._get_distance(self.plan[velo_index], self.odom)
+
+        target = (self.plan[velo_index][0], self.plan[velo_index][1])
+        dist = self._get_distance(self.odom, target)
+
+        alpha = math.atan2(target[1] - self.odom[1], target[0] - self.odom[0]) - self.heading
+        steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), dist)
+        steering_angle = math.degrees(steering_angle)
+
+        steering_angle = abs(steering_angle)
+        print(steering_angle)
+        if steering_angle >= 15:
+            speed = self.min_speed
+        else:
+            speed = self.max_speed - ((steering_angle / 15.0) * (self.max_speed - self.min_speed))
+
+        return speed
+
+
 
     def _get_distance(self, p1, p2):
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
