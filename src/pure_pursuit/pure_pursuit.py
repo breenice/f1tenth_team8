@@ -3,7 +3,7 @@
 import os
 import csv
 import math
-
+from pp_config import *
 
 WHEELBASE_LEN = 0.325
 
@@ -55,7 +55,21 @@ class PurePursuit:
 
         self.get_base_projection()
         self.get_lookahead_point()
-        return self.get_steering_angle()
+        test = self.get_steering_angle()
+        angle = abs(test)
+        self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE + (((100-angle) / 100) * (MAX_LOOK_AHEAD_DISTANCE - MIN_LOOK_AHEAD_DISTANCE))
+        #if angle >= 90:
+            #self.lookahead_distance = MAX_LOOK_AHEAD_DISTANCE
+        #else:
+            #self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE
+
+        print("lookahead:")
+        print(self.lookahead_distance)
+        print("angle: ")
+        print(angle)
+
+        angle = self.get_steering_angle()
+        return angle
 
     def get_base_projection(self):
         """
