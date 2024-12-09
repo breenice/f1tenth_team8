@@ -1,5 +1,9 @@
 import os
 import csv
+import rospy
+from geometry_msgs.msg import Point32
+from geometry_msgs.msg import PolygonStamped
+from overtaker_config import *
 
 PATH_FOLDER = '/home/volta/depend_ws/src/f1tenth_purepursuit/path'
 
@@ -16,6 +20,7 @@ class RacelineMerchant:
         if not hasattr(self, 'initialized'):
             self.initialized = True
             self.plan = []
+            self.raceline_pub = rospy.Publisher('/{}/raceline'.format(CAR_NAME), PolygonStamped, queue_size=1)
 
     def construct_path(self, trajectory_name):
         """
@@ -23,11 +28,11 @@ class RacelineMerchant:
         """
         if trajectory_name in self._cache:
             self.plan = self._cache[trajectory_name]
+            self.publish_raceline()
             return
 
         self.plan = []
         
-        # TODO: Modify this path to match the folder where the csv file containing the path is located.
         file_path = os.path.expanduser(
             '{}/{}.csv'.format(PATH_FOLDER, trajectory_name))
 
@@ -36,10 +41,30 @@ class RacelineMerchant:
             for waypoint in csv_reader:
                 self.plan.append(waypoint)
 
-        # Convert string coordinates to floats and calculate path resolution
+        # Convert string coordinates to floats
         for index in range(0, len(self.plan)):
             for point in range(0, len(self.plan[index])):
                 self.plan[index][point] = float(self.plan[index][point])
                 
         # Cache the processed path
         self._cache[trajectory_name] = self.plan.copy()
+
+        # Publish the new raceline
+        self.publish_raceline()
+
+    def publish_raceline(self):
+        """
+        Publishes the current raceline as a polygon for visualization in RViz
+        """
+        polygon = PolygonStamped()
+        polygon.header.stamp = rospy.Time.now()
+        polygon.header.frame_id = "map"
+
+        for point in self.plan:
+            p = Point32()
+            p.x = point[0]
+            p.y = point[1]
+            p.z = 0.0
+            polygon.polygon.points.append(p)
+
+        self.raceline_pub.publish(polygon)
