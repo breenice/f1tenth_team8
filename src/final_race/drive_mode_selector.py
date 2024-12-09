@@ -10,7 +10,7 @@ from overtaker_config import *
 class DriveModeSelector:
     def __init__(self):
         self.drive_mode_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
-        self.raceline_pub = rospy.Publisher('/{}/raceline'.format(CAR_NAME), String, queue_size=1)
+        self.raceline_pub = rospy.Publisher('/{}/select_raceline'.format(CAR_NAME), String, queue_size=1)
         
         self.map = cv2.imread('base_map.pgm', cv2.IMREAD_GRAYSCALE)
         
@@ -57,6 +57,7 @@ class DriveModeSelector:
         if self.current_pose is None:
             return
 
+        return
         # Convert scan data to cartesian coordinates relative to car
         angle_min = -(scan.angle_min % math.pi)
         angles = np.arange(angle_min, scan.angle_max + scan.angle_increment, scan.angle_increment)

@@ -2,16 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 import csv
-from scipy.interpolate import CubicSpline
 
 # Load the map image
-map_image_path = 'base_map.pgm'
+map_image_path = 'map/base_map.pgm'
 map_image = Image.open(map_image_path)
 map_array = np.array(map_image)
 
 # Map metadata from the YAML file
-origin_x, origin_y = -3.983246, -1.321383  # Origin of the map
-resolution = 0.050000  # Resolution of the map
+origin_x, origin_y = -6.977912, -3.423147  # Origin of the map
+resolution = 0.025000  # Resolution of the map
 
 
 # Function to convert image coordinates to map coordinates
@@ -74,7 +73,7 @@ def generate_spline():
             points.remove()
         
         # Sort points clockwise before creating the loop
-        x_sorted, y_sorted = sort_points_clockwise(x_clicked, y_clicked)
+        x_sorted, y_sorted = x_clicked, y_clicked # sort_points_clockwise(x_clicked, y_clicked)
         
         # Create closed loop by adding points for periodic boundary
         x_loop = x_sorted[-1:] + x_sorted + x_sorted[:2]

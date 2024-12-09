@@ -21,7 +21,7 @@ class PurePursuitControl:
         # Global variables for storing the path, path resolution, frame ID, and car details
         self.frame_id = 'map'
         self.car_name = "car_8"  # str(sys.argv[1])
-        self.trajectory_name = str(rospy.get_param("~raceline", "raceline_far")) # str(sys.argv[2])
+        self.trajectory_name = str(rospy.get_param("~raceline", "demoline")) # str(sys.argv[2])
 
         # Publishers for sending driving commands and visualizing the control polygon
         self.command_pub = rospy.Publisher('/{}/offboard/command'.format(self.car_name), AckermannDrive, queue_size=1)

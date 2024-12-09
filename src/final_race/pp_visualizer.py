@@ -2,7 +2,7 @@ import rospy
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 
-from src.final_race.overtaker_config import *
+from overtaker_config import *
 
 
 class PPVisualizer:

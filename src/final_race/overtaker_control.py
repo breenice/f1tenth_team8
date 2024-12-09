@@ -4,26 +4,26 @@ from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDrive
 from std_msgs.msg import Int32, String
 
-from pp.multi_pp_control import MultiPPControl
-from ftg.ftg_control import FTGControl
+from multi_pp_control import MultiPPControl
+from ftg_control import FTGControl
 from overtaker_config import *
 
 class OvertakerControl:
     def __init__(self):
-        self.drive_mode = DriveMode.STOP
-        self.speed_mode = SpeedMode.STOP
+        self.drive_mode = DriveMode.PP
+        self.speed_mode = SpeedMode.PP
         rospy.Subscriber('/{}/drive_mode'.format(CAR_NAME), Int32, self.set_drive_mode)
         rospy.Subscriber('/{}/speed_mode'.format(CAR_NAME), Int32, self.set_speed_mode)
 
         self.racelines = RACELINES
-        rospy.Subscriber('/{}/raceline'.format(CAR_NAME), String, self.raceline_callback)
+        rospy.Subscriber('/{}/select_raceline'.format(CAR_NAME), String, self.set_raceline)
         
         self.command_pub = rospy.Publisher('/{}/offboard/command'.format(CAR_NAME), AckermannDrive, queue_size=1)
 
         self.pp_control = MultiPPControl()
         self.init_pp()
 
-        self.ftg_control = FTGControl()
+        self.ftg = FTGControl()
         self.init_ftg()
 
         self.current_speed = 0
@@ -40,7 +40,7 @@ class OvertakerControl:
 
     def init_pp(self):
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped,
-                         self.pp_control.pp_control)
+                         self.mpp_control)
 
     def mpp_control(self, data):
         if self.drive_mode == DriveMode.PP:
@@ -51,13 +51,14 @@ class OvertakerControl:
             if self.speed_mode == SpeedMode.PP:
                 self.target_speed = speed
             self.publish_command(steering_angle)
+            print("steering:", steering_angle, "speed:", speed)
 
     def init_ftg(self):
         rospy.Subscriber("/car_8/scan", LaserScan, self.ftg_control)
 
     def ftg_control(self, data):
         if self.drive_mode == DriveMode.FTG:
-            command = self.ftg_control.ftg_control(data)
+            command = self.ftg.ftg_control(data)
             steering_angle = command.steering_angle
             speed = command.speed
 

@@ -32,7 +32,7 @@ class PurePursuit:
 
         # TODO: Modify this path to match the folder where the csv file containing the path is located.
         file_path = os.path.expanduser(
-            '/home/volta/depend_ws/src/f1tenth_purepursuit/path/{}.csv'.format(trajectory_name))
+            '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/pure_pursuit/{}.csv'.format(trajectory_name))
 
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')

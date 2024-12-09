@@ -5,7 +5,7 @@ import rospy
 from ackermann_msgs.msg import AckermannDrive
 import tf
 
-from src.final_race.overtaker_config import *
+from overtaker_config import *
 from pp import PurePursuit
 from pp_visualizer import PPVisualizer
 from pp_config import *

@@ -5,7 +5,7 @@ from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PolygonStamped
 from overtaker_config import *
 
-PATH_FOLDER = '/home/volta/depend_ws/src/f1tenth_purepursuit/path'
+PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race'
 
 class RacelineMerchant:
     _instance = None
@@ -47,7 +47,7 @@ class RacelineMerchant:
                 self.plan[index][point] = float(self.plan[index][point])
                 
         # Cache the processed path
-        self._cache[trajectory_name] = self.plan.copy()
+        self._cache[trajectory_name] = self.plan[:]
 
         # Publish the new raceline
         self.publish_raceline()
@@ -67,4 +67,6 @@ class RacelineMerchant:
             p.z = 0.0
             polygon.polygon.points.append(p)
 
-        self.raceline_pub.publish(polygon)
+        for _ in range(3):
+            self.raceline_pub.publish(polygon)
+            rospy.sleep(0.1)
