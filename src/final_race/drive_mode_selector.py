@@ -1,6 +1,7 @@
-import rospy
 import cv2
+import rospy
 import numpy as np
+import math
 from std_msgs.msg import Int32, String
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
@@ -11,16 +12,38 @@ class DriveModeSelector:
         self.drive_mode_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
         self.raceline_pub = rospy.Publisher('/{}/raceline'.format(CAR_NAME), String, queue_size=1)
         
-        # self.map = cv2.imread('base_map.pgm', cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.imread('base_map.pgm', cv2.IMREAD_GRAYSCALE)
         
         self.current_pose = None
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), 
                         PoseStamped, self.pose_callback)
         
         rospy.Subscriber("/car_8/scan", LaserScan, self.scan_callback)
+        self.wall_threshold = 10
 
     def pose_callback(self, msg):
         self.current_pose = msg.pose
+
+    def world_to_map(self, point):
+        pass
+
+    def close_to_wall(self, point):
+        # Convert point to integer pixel coordinates
+        x, y = int(point[0]), int(point[1])
+        
+        # Create a window around the point to check
+        window_size = self.wall_threshold
+        x_min = max(0, x - window_size)
+        x_max = min(self.map.shape[1], x + window_size + 1)
+        y_min = max(0, y - window_size)
+        y_max = min(self.map.shape[0], y + window_size + 1)
+        
+        # Get window from map
+        window = self.map[y_min:y_max, x_min:x_max]
+        
+        # Check if any pixel in window is black (wall)
+        # Walls are black (0) in the map
+        return np.any(window < 128)
 
     def scan_callback(self, scan):
         """
@@ -31,7 +54,31 @@ class DriveModeSelector:
         Choose a drive mode
         Or, iterate over racelines and choose raceline that does not have obstacle
         """
-        pass
+        if self.current_pose is None:
+            return
+
+        # Convert scan data to cartesian coordinates relative to car
+        angle_min = -(scan.angle_min % math.pi)
+        angles = np.arange(angle_min, scan.angle_max + scan.angle_increment, scan.angle_increment)
+        xs = scan.ranges * np.cos(angles)
+        ys = scan.ranges * np.sin(angles)
+        points = np.vstack((xs, ys))
+
+        # Filter out invalid readings
+        print("Min Scan Range: ", scan.range_min)
+        print("Max Scan Range: ", scan.range_max)
+        valid_mask = np.logical_and(scan.ranges > scan.range_min, scan.ranges < scan.range_max)
+        points = points[:, valid_mask]
+
+        obstacles = []
+        for point in points:
+            map_point = self.world_to_map(point)
+            if self.close_to_wall(map_point):
+                obstacles.append(point)
+
+        for raceline in RACELINES:
+            pass
+            # Check each raceline and choose one
 
     def set_mode_stop(self):
         self.drive_mode_pub.publish(DriveMode.STOP)

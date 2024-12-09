@@ -24,7 +24,6 @@ class MultiPPControl:
         self.select_raceline(self.racelines[0])
 
     def select_raceline(self, raceline):
-        # TODO: Add caching of racelines in pure_pursuit.py
         if raceline not in self.racelines:
             rospy.logerr("Invalid raceline: {}".format(raceline))
             return

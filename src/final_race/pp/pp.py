@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-import os
-import csv
 import math
 from pp_config import *
+from raceline_merchant import RacelineMerchant
 
 WHEELBASE_LEN = 0.325
 
@@ -15,8 +14,8 @@ class PurePursuit:
         self.min_speed = min_speed
         self.max_speed = max_speed
 
+        self.raceline_merchant = RacelineMerchant()
         self.plan = []
-        self.path_resolution = []
 
         self.odom = None
         self.base_proj = None
@@ -29,25 +28,8 @@ class PurePursuit:
         """
         Function to construct the path from a CSV file
         """
-
-        # TODO: Modify this path to match the folder where the csv file containing the path is located.
-        file_path = os.path.expanduser(
-            '/home/volta/depend_ws/src/f1tenth_purepursuit/path/{}.csv'.format(trajectory_name))
-
-        with open(file_path) as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            for waypoint in csv_reader:
-                self.plan.append(waypoint)
-
-        # Convert string coordinates to floats and calculate path resolution
-        for index in range(0, len(self.plan)):
-            for point in range(0, len(self.plan[index])):
-                self.plan[index][point] = float(self.plan[index][point])
-
-        for index in range(1, len(self.plan)):
-            dx = self.plan[index][0] - self.plan[index - 1][0]
-            dy = self.plan[index][1] - self.plan[index - 1][1]
-            self.path_resolution.append(math.sqrt(dx * dx + dy * dy))
+        self.raceline_merchant.construct_path(trajectory_name)
+        self.plan = self.raceline_merchant.plan
 
     def pure_pursuit(self, odom_x, odom_y, heading):
         self.odom = (odom_x, odom_y)
@@ -136,8 +118,6 @@ class PurePursuit:
             speed = self.max_speed - ((steering_angle / 15.0) * (self.max_speed - self.min_speed))
 
         return speed
-
-
 
     def _get_distance(self, p1, p2):
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
