@@ -8,6 +8,8 @@ from geometry_msgs.msg import PoseStamped
 from overtaker_config import *
 
 class DriveModeSelector:
+
+    # set mode
     def __init__(self):
         self.drive_mode_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
         self.raceline_pub = rospy.Publisher('/{}/select_raceline'.format(CAR_NAME), String, queue_size=1)
@@ -24,27 +26,6 @@ class DriveModeSelector:
     def pose_callback(self, msg):
         self.current_pose = msg.pose
 
-    def world_to_map(self, point):
-        pass
-
-    def close_to_wall(self, point):
-        # Convert point to integer pixel coordinates
-        x, y = int(point[0]), int(point[1])
-        
-        # Create a window around the point to check
-        window_size = self.wall_threshold
-        x_min = max(0, x - window_size)
-        x_max = min(self.map.shape[1], x + window_size + 1)
-        y_min = max(0, y - window_size)
-        y_max = min(self.map.shape[0], y + window_size + 1)
-        
-        # Get window from map
-        window = self.map[y_min:y_max, x_min:x_max]
-        
-        # Check if any pixel in window is black (wall)
-        # Walls are black (0) in the map
-        return np.any(window < 128)
-
     def scan_callback(self, scan):
         """
         TODO: Based on scan and pose, determine what coordinates have obstacles
@@ -53,7 +34,14 @@ class DriveModeSelector:
         Based on these coordinates...
         Choose a drive mode
         Or, iterate over racelines and choose raceline that does not have obstacle
+        
+        logic to switch in here
         """
+
+        ## this most likely wrong lel 
+
+
+        
         if self.current_pose is None:
             return
 
