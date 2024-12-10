@@ -3,9 +3,6 @@
 import math
 from pp_config import *
 
-import sys
-sys.path.append("../final_race")
-
 from raceline_merchant import RacelineMerchant
 
 WHEELBASE_LEN = 0.325
@@ -76,7 +73,7 @@ class PurePursuit:
         """
         Follow path starting from base_projection and get first point that is lookahead_distance away
         """
-        target_index = (self.base_proj_index + 10) % len(self.plan)
+        target_index = (self.base_proj_index + 8) % len(self.plan)
         self.target = (self.plan[target_index - 1][0], self.plan[target_index - 1][1])
         return
 
@@ -110,7 +107,7 @@ class PurePursuit:
 
         distance = self._get_distance(self.base_proj, vel_target) - 1.5
 
-        return max(30, distance * 25)
+        return max(30, distance * 20)
 
         # if not self.speed_plan:
         #     # Dynamic speed from ftg algo
