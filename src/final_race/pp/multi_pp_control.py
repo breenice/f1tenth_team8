@@ -5,7 +5,10 @@ import rospy
 from ackermann_msgs.msg import AckermannDrive
 import tf
 
-from overtaker_config import *
+import sys
+sys.path.append("../final_race")
+
+from final_race.overtaker_config import *
 from pp import PurePursuit
 from pp_visualizer import PPVisualizer
 from pp_config import *
@@ -27,7 +30,7 @@ class MultiPPControl:
         if raceline not in self.racelines:
             rospy.logerr("Invalid raceline: {}".format(raceline))
             return
-        
+
         rospy.loginfo("Switching to raceline: {}".format(raceline))
         self.pp.construct_path(raceline)
         rospy.loginfo("Switching to raceline: {} complete".format(raceline))

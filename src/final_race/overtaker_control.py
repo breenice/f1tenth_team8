@@ -4,6 +4,9 @@ from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDrive
 from std_msgs.msg import Int32, String
 
+import sys
+sys.path.append("pp")
+
 from multi_pp_control import MultiPPControl
 from ftg_control import FTGControl
 from overtaker_config import *

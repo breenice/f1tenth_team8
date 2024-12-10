@@ -2,6 +2,9 @@ import rospy
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import Point32
 
+import sys
+sys.path.append("../final_race")
+
 from overtaker_config import *
 
 
