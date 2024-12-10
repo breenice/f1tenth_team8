@@ -16,6 +16,7 @@ class PurePursuit:
 
         self.raceline_merchant = RacelineMerchant()
         self.plan = []
+        self.speed_plan = []
 
         self.odom = None
         self.base_proj = None
@@ -30,6 +31,10 @@ class PurePursuit:
         """
         self.raceline_merchant.construct_path(trajectory_name)
         self.plan = self.raceline_merchant.plan
+        self.speed_plan = self.raceline_merchant.speed_plan
+        if self.speed_plan:
+            self.min_plan_speed = min(self.speed_plan)
+            self.max_plan_speed = max(self.speed_plan)
 
     def pure_pursuit(self, odom_x, odom_y, heading):
         self.odom = (odom_x, odom_y)
@@ -39,7 +44,11 @@ class PurePursuit:
         self.get_lookahead_point()
         test = self.get_steering_angle()
         angle = abs(test)
+        #dynamic lookahead
         self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE + (((100-angle) / 100) * (MAX_LOOK_AHEAD_DISTANCE - MIN_LOOK_AHEAD_DISTANCE))
+        
+
+        
         #if angle >= 90:
             #self.lookahead_distance = MAX_LOOK_AHEAD_DISTANCE
         #else:
@@ -65,6 +74,7 @@ class PurePursuit:
                 min_dist = distance
                 base_projection_index = index
         # get the coordinates for base projection
+        print("IDX", base_projection_index)
         self.base_proj = (self.plan[base_projection_index][0], self.plan[base_projection_index][1])
         self.base_proj_index = base_projection_index
 
@@ -96,28 +106,22 @@ class PurePursuit:
         # print("Alpha:", alpha, "Steering Angle:", steering_angle)
         return steering_angle
     
-    def get_dynamic_velo(self):
-        velo_index = self.base_proj_index
-        dist = 0
-        while dist < self.velo_lookahead_distance:
-            velo_index = (velo_index + 1) % len(self.plan)
-            dist = self._get_distance(self.plan[velo_index], self.odom)
-
-        target = (self.plan[velo_index][0], self.plan[velo_index][1])
-        dist = self._get_distance(self.odom, target)
-
-        alpha = math.atan2(target[1] - self.odom[1], target[0] - self.odom[0]) - self.heading
-        steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), dist)
-        steering_angle = math.degrees(steering_angle)
-
-        steering_angle = abs(steering_angle)
-        print(steering_angle)
-        if steering_angle >= 15:
-            speed = self.min_speed
+    def get_dynamic_velo(self, steering_angle):
+        if not self.speed_plan:
+            # Dynamic speed from ftg algo
+            abs_steering_angle = abs(steering_angle)
+            if abs_steering_angle >= 100:
+                return MIN_SPEED
+            else:
+                return MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
         else:
-            speed = self.max_speed - ((steering_angle / 15.0) * (self.max_speed - self.min_speed))
+            intended_speed = self.speed_plan[self.base_proj_index]
+            return intended_speed * 10
 
-        return speed
+            x1, y1 = self.min_plan_speed, MIN_SPEED
+            x2, y2 = self.max_plan_speed, MAX_SPEED
+            x_new = intended_speed
+            return y1 + (y2 - y1) / (x2 - x1) * (x_new - x1)
 
     def _get_distance(self, p1, p2):
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)

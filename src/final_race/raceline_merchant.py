@@ -5,7 +5,7 @@ from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PolygonStamped
 from overtaker_config import *
 
-PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race'
+PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'
 
 class RacelineMerchant:
     _instance = None
@@ -32,19 +32,25 @@ class RacelineMerchant:
             return
 
         self.plan = []
+        self.speed_plan = []
         
         file_path = os.path.expanduser(
             '{}/{}.csv'.format(PATH_FOLDER, trajectory_name))
 
+        csv_read = []
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for waypoint in csv_reader:
-                self.plan.append(waypoint)
+                csv_read.append(waypoint)
 
         # Convert string coordinates to floats
-        for index in range(0, len(self.plan)):
-            for point in range(0, len(self.plan[index])):
-                self.plan[index][point] = float(self.plan[index][point])
+        for index in range(0, len(csv_read)):
+            self.plan.append([0, 0])
+            self.plan[index][0] = float(csv_read[index][0])
+            self.plan[index][1] = float(csv_read[index][1])
+            if len(csv_read[index]) > 2:
+                self.speed_plan.append(0)
+                self.speed_plan[index] = float(csv_read[index][2])
                 
         # Cache the processed path
         self._cache[trajectory_name] = self.plan[:]
@@ -67,6 +73,6 @@ class RacelineMerchant:
             p.z = 0.0
             polygon.polygon.points.append(p)
 
-        for _ in range(3):
+        for _ in range(5):
             self.raceline_pub.publish(polygon)
             rospy.sleep(0.1)

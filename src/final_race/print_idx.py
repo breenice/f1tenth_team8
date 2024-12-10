@@ -3,14 +3,14 @@
 import os
 import csv
 import math
+from pp import *
 from pp_config import *
-import pure_pursuit as pp
-from pure_pursuit import PurePursuit, PurePursuitControl
 import numpy as np
 
-class PrintIdx(PurePursuit, PurePursuitControl):
+class PrintIdx(PurePursuit):
     def __init__(self):
         super().__init__(LOOKAHEAD_DISTANCE, VELOCITY_LOOKAHEAD_DISTANCE, MIN_SPEED, MAX_SPEED)
+        print_idx()
 
 
     def print_idx(self, data):
@@ -18,5 +18,5 @@ class PrintIdx(PurePursuit, PurePursuitControl):
         curr_y = data.pose.position.y
         distances = [np.sqrt((x - curr_x)**2 + (y - curr_y)**2) for x, y in self.plan]
         closest_index = np.argmin(distances)
-        print(closest_index)
+        print("index: ", closest_index)
         return closest_index

@@ -57,12 +57,12 @@ class MultiPPControl:
         command.steering_angle = steering_angle
 
         # Dynamic speed from ftg algo
-        abs_steering_angle = abs(steering_angle)
-        if abs_steering_angle >= 100:
-            command.speed = MIN_SPEED
-        else:
-            command.speed = MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
-        # command.speed = self.pp.get_dynamic_velo()
+        # abs_steering_angle = abs(steering_angle)
+        # if abs_steering_angle >= 100:
+        #     command.speed = MIN_SPEED
+        # else:
+        #     command.speed = MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
+        command.speed = self.pp.get_dynamic_velo(steering_angle)
 
         self.pp_visualizer.publish_rviz_markers(odom_x, odom_y, pose_x, pose_y, target_x, target_y)
         return command
