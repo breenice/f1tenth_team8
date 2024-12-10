@@ -78,6 +78,44 @@ class PurePursuit:
         self.base_proj = (self.plan[base_projection_index][0], self.plan[base_projection_index][1])
         self.base_proj_index = base_projection_index
 
+    def get_lookahead_distance(self):
+        """
+        Set the lookahead distance based on curvature of the path ahead. Starting from self.base_projection_index,
+        go along the path for LOOKAHEAD_METERS and calculate the total curvature of the path.
+        """
+        total_curvature = 0
+        current_index = self.base_proj_index
+        distance_covered = 0
+        
+        while current_index < len(self.plan) - 2 and distance_covered < LOOKAHEAD_METERS:
+            # Get three consecutive points to calculate curvature
+            p1 = self.plan[current_index]
+            p2 = self.plan[current_index + 1]
+            p3 = self.plan[current_index + 2]
+            
+            # Calculate vectors between points
+            v1 = (p2[0] - p1[0], p2[1] - p1[1])
+            v2 = (p3[0] - p2[0], p3[1] - p2[1])
+            
+            # Calculate angle between vectors
+            dot_product = v1[0]*v2[0] + v1[1]*v2[1]
+            v1_mag = math.sqrt(v1[0]**2 + v1[1]**2)
+            v2_mag = math.sqrt(v2[0]**2 + v2[1]**2)
+            
+            # Avoid division by zero
+            if v1_mag * v2_mag == 0:
+                angle = 0
+            else:
+                angle = math.acos(max(-1, min(1, dot_product/(v1_mag * v2_mag))))
+            
+            total_curvature += abs(angle)
+            distance_covered += self._get_distance(p1, p2)
+            current_index += 1
+            
+        # Adjust lookahead distance based on curvature
+        curvature_factor = 1 - min(1, total_curvature / math.pi)
+        self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE + curvature_factor * (MAX_LOOK_AHEAD_DISTANCE - MIN_LOOK_AHEAD_DISTANCE)
+
     def get_lookahead_point(self):
         """
         Follow path starting from base_projection and get first point that is lookahead_distance away
