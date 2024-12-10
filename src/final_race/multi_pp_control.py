@@ -20,7 +20,7 @@ class MultiPPControl:
 
         self.pp_visualizer = PPVisualizer()
 
-        self.pp = PurePursuit(LOOKAHEAD_DISTANCE, VELOCITY_LOOKAHEAD_DISTANCE, MIN_SPEED, MAX_SPEED)
+        self.pp = PurePursuit(LOOKAHEAD_DISTANCE, VELO_LOOKAHEAD_METERS, MIN_SPEED, MAX_SPEED)
         self.select_raceline(self.racelines[0])
 
     def select_raceline(self, raceline):

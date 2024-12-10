@@ -8,6 +8,10 @@ Panels:
         - /Status1
         - /LaserScan1
         - /Pose1
+        - /Polygon1
+        - /Path1
+        - /Polygon2
+        - /Polygon2/Status1
       Splitter Ratio: 0.5
     Tree Height: 1246
   - Class: rviz/Selection
@@ -154,6 +158,14 @@ Visualization Manager:
       Topic: /trajectory_builder/visualize_path
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Class: rviz/Polygon
+      Color: 25; 255; 255
+      Enabled: true
+      Name: Polygon
+      Topic: /car_8/raceline
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -182,7 +194,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.87191104888916
+      Distance: 14.787120819091797
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -197,10 +209,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.1253975629806519
+      Pitch: 0.8403975367546082
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.925398826599121
+      Yaw: 3.325394868850708
     Saved: ~
 Window Geometry:
   Displays:

@@ -41,11 +41,12 @@ class PurePursuit:
         self.heading = heading
 
         self.get_base_projection()
+        self.get_lookahead_distance()
         self.get_lookahead_point()
-        test = self.get_steering_angle()
-        angle = abs(test)
-        #dynamic lookahead
-        self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE + (((100-angle) / 100) * (MAX_LOOK_AHEAD_DISTANCE - MIN_LOOK_AHEAD_DISTANCE))
+        # test = self.get_steering_angle()
+        # angle = abs(test)
+        # #dynamic lookahead
+        # self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE + (((100-angle) / 100) * (MAX_LOOK_AHEAD_DISTANCE - MIN_LOOK_AHEAD_DISTANCE))
         
 
         
@@ -87,7 +88,7 @@ class PurePursuit:
         current_index = self.base_proj_index
         distance_covered = 0
         
-        while current_index < len(self.plan) - 2 and distance_covered < LOOKAHEAD_METERS:
+        while current_index < len(self.plan) - 2 and distance_covered < self.velo_lookahead_distance:
             # Get three consecutive points to calculate curvature
             p1 = self.plan[current_index]
             p2 = self.plan[current_index + 1]
@@ -113,21 +114,23 @@ class PurePursuit:
             current_index += 1
             
         # Adjust lookahead distance based on curvature
-        curvature_factor = 1 - min(1, total_curvature / math.pi)
+        curvature_factor = min(1, total_curvature / math.pi)
         self.lookahead_distance = MIN_LOOK_AHEAD_DISTANCE + curvature_factor * (MAX_LOOK_AHEAD_DISTANCE - MIN_LOOK_AHEAD_DISTANCE)
+        print(total_curvature, curvature_factor, self.lookahead_distance)
+
 
     def get_lookahead_point(self):
         """
         Follow path starting from base_projection and get first point that is lookahead_distance away
         """
         # TODO 3: Utilizing the base projection found in TODO 1, your next task is to identify the goal or target point for the car.
-        target_index = self.base_proj_index
+        target_index = (self.base_proj_index + 10) % len(self.plan)
         # loop through waypoints along our path until target point is at least lookahead_distance away and we havent
         # reached end
-        while target_index < len(self.plan) - 1:
-            if self._get_distance(self.odom, self.plan[target_index]) >= self.lookahead_distance:
-                break
-            target_index += 1
+        # while target_index < len(self.plan) - 1:
+        #     if self._get_distance(self.odom, self.plan[target_index]) >= self.lookahead_distance:
+        #         break
+        #     target_index += 1
 
         # TODO: Make this interpolate if target point is beyond lookahead distance
         # target coordiantes for where we want the car to go to next bc they're just far enough past lookahead dist
@@ -145,6 +148,13 @@ class PurePursuit:
         return steering_angle
     
     def get_dynamic_velo(self, steering_angle):
+        target_index = (self.base_proj_index + 20) % len(self.plan)
+        vel_target = (self.plan[target_index-1][0], self.plan[target_index-1][1])
+
+        distance = self._get_distance(self.base_proj, vel_target) - 1.5
+
+        return max(30, distance * 25)
+
         if not self.speed_plan:
             # Dynamic speed from ftg algo
             abs_steering_angle = abs(steering_angle)
@@ -154,7 +164,7 @@ class PurePursuit:
                 return MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
         else:
             intended_speed = self.speed_plan[self.base_proj_index]
-            return intended_speed * 10
+            return min(70, intended_speed * 12) 
 
             x1, y1 = self.min_plan_speed, MIN_SPEED
             x2, y2 = self.max_plan_speed, MAX_SPEED

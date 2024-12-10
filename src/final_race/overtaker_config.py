@@ -12,4 +12,4 @@ class SpeedMode:
     CC = 3 # Cruise Control
 
 # Racelines are the paths that the overtaker can choose between
-RACELINES = ["mincurve", "mindist", "demoline"]
+RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
