@@ -6,6 +6,7 @@ from std_msgs.msg import Int32, String
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
 from overtaker_config import *
+from ftg_config import MAXIMUM_SPEED 
 
 class DriveModeSelector:
 
@@ -70,14 +71,30 @@ class DriveModeSelector:
             elif gap_width > MIN_GAP_SIZE:  # smaller gap - use inner
                 self.set_raceline('mincurve')
             else:  # cc
-                self.set_mode_ftg()
+                self.set_mode_cc()
                 
         except:
             # if gap finding fails, switch to cc
-            self.set_mode_ftg()
+            self.set_mode_cc()
 
     def set_mode_stop(self):
         self.drive_mode_pub.publish(DriveMode.STOP)
+        
+    def set_mode_cc(self):
+        #maintain a distance of 1.5 meters from the closest object ahead.
+        
+        if self.current_pose is None:
+            return
+        
+        closest_index = self.get_closest_index() # cloestes point index
+        closest_distance = self.get_distance_to_object(closest_index)  
+
+        if closest_distance < CC_DISTANCE: 
+            speed = self.dynamic_velocity(closest_distance) 
+        else:
+            speed = MAXIMUM_SPEED 
+        
+        self.drive_mode_pub.publish(DriveMode.CC)
 
     def set_mode_ftg(self):
         self.drive_mode_pub.publish(DriveMode.FTG)
