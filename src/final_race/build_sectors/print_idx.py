@@ -10,7 +10,7 @@ import numpy as np
 
 class PrintIdx(PurePursuit, PurePursuitControl):
     def __init__(self):
-        super().__init__()
+        super().__init__(LOOKAHEAD_DISTANCE, VELOCITY_LOOKAHEAD_DISTANCE, MIN_SPEED, MAX_SPEED)
 
 
     def print_idx(self, data):
