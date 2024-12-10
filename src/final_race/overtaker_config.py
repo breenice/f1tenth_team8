@@ -13,3 +13,5 @@ class SpeedMode:
 
 # Racelines are the paths that the overtaker can choose between
 RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
+
+CC_DISTANCE = 1.5 
