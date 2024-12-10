@@ -229,4 +229,4 @@ fig.canvas.mpl_connect('key_press_event', onkey)
 plt.show()
 
 # Save the race line after the plot window is closed
-save_race_line('demoline.csv')
+save_race_line('drawn_line.csv')
