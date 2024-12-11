@@ -6,6 +6,7 @@ from std_msgs.msg import Int32, String
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
 from overtaker_config import *
+from ftg_config import MAXIMUM_SPEED 
 
 class DriveModeSelector:
 
@@ -62,22 +63,38 @@ class DriveModeSelector:
     #         gap_width = end_i - start_i
     #         gap_depth = min(processed_ranges[start_i:end_i])
             
-    #         # which raceline to use based on gap
-    #         if gap_width > MIN_GAP_SIZE * 2:  # large gap - use center
-    #             self.set_raceline('mindist')
-    #         elif gap_depth > MAX_LIDAR_DISTANCE * 0.8:  # deep gap - use outer
-    #             self.set_raceline('mindist_boundry')
-    #         elif gap_width > MIN_GAP_SIZE:  # smaller gap - use inner
-    #             self.set_raceline('mincurve')
-    #         else:  # cc
-    #             self.set_mode_ftg()
+            # which raceline to use based on gap
+            if gap_width > MIN_GAP_SIZE * 2:  # large gap - use center
+                self.set_raceline('mindist')
+            elif gap_depth > MAX_LIDAR_DISTANCE * 0.8:  # deep gap - use outer
+                self.set_raceline('mindist_boundry')
+            elif gap_width > MIN_GAP_SIZE:  # smaller gap - use inner
+                self.set_raceline('mincurve')
+            else:  # cc
+                self.set_mode_cc()
                 
-    #     except:
-    #         # if gap finding fails, switch to cc
-    #         self.set_mode_ftg()
+        except:
+            # if gap finding fails, switch to cc
+            self.set_mode_cc()
 
     def set_mode_stop(self):
         self.drive_mode_pub.publish(DriveMode.STOP)
+        
+    def set_mode_cc(self):
+        #maintain a distance of 1.5 meters from the closest object ahead.
+        
+        if self.current_pose is None:
+            return
+        
+        closest_index = self.get_closest_index() # cloestes point index
+        closest_distance = self.get_distance_to_object(closest_index)  
+
+        if closest_distance < CC_DISTANCE: 
+            speed = self.dynamic_velocity(closest_distance) 
+        else:
+            speed = MAXIMUM_SPEED 
+        
+        self.drive_mode_pub.publish(DriveMode.CC)
 
     def set_mode_ftg(self):
         self.drive_mode_pub.publish(DriveMode.FTG)

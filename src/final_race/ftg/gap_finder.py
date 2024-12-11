@@ -51,30 +51,13 @@ class GapFinder:
 
     def get_gap(self):
         valid_gaps = self.get_gaps() # for if no gaps found 
-        # ORIGINAL CODE
-        # return self.gap_selection()
-
-        # NEW CODE
-
-        # ----- 
-        # increase min_gap_distance if no valid gaps found
+ 
 
             
         while not valid_gaps:
             self.min_gap_distance -= .025  # increase min gap distance in increments
             if self.min_gap_distance > 2 * self.og_min_gap_distance:
                 self.min_gap_distance = self.og_min_gap_distance  # reset if maxed out
-            # if min(self.ranges)  > 6:
-            #min_index = self.get_index_of(0)
-            #max_index = self.get_index_of(90)
-
-            #close = 0
-            #for i in range(min_index, max_index):
-            #    if self.ranges[i] < self.cornering_distance:
-            #        close += 1
-            #if close > 5:
-            #    print("cornering")
-            #    return self.get_index_of(90)
             return 0, len(self.ranges) - 1  # default
         
         # reset min_gap_distance if valid gaps are found
@@ -121,64 +104,6 @@ class GapFinder:
         if close > 10:
             print("cornering")
             return self.get_index_of(90)
-        
-        # min_index = self.get_index_of(0)
-        # max_index = self.get_index_of(90)
-
-        # close = 0
-        # for i in range(min_index, max_index):
-        #     if 0.05 < self.ranges[i] < self.cornering_distance:
-        #         close += 1
-        # if close > 10:
-        #     print("cornering")
-        #     return self.get_index_of(90)
-            
-
-        # ----
-
-
-        # NEW COOOOOODE -0---- (cornering/turning)
-
-        # center_index = self.get_index_of(90)
-
-        # CORNER_DETECTION_THRESHOLD = 15
-        # CORNER_SEARCH_RANGE = 30
-
-        # # count points that are too close
-        # close_points = sum(1 for i in range(min_index, max_index)
-        #                    if self.ranges[i] < self.cornering_distance)
-        # # modified: only consider it a corner if we have more close points
-        # if close_points > CORNER_DETECTION_THRESHOLD: # threshold = 20
-        #     # calculate a weighted point instead of jumping to 90 degree
-        #     center_index = self.get_index_of(90)
-        #     # find the furthest point within a reasonable range
-        #     search_start = max(start_i, center_index - CORNER_SEARCH_RANGE)          
-        #     search_end = min(end_i, center_index + CORNER_SEARCH_RANGE)
-            
-        #     # get the point with maximum distance in our research range
-
-        #     # smooth the transition
-        #     if search_start < search_end:
-                
-        #         max_dist_index = search_start + np.argmax(self.ranges[search_start::search_end])
-        #         target_angle = self.get_angle_from_index(max_dist_index)
-        #         smoothed_angle = self.smooth_steering(target_angle)
-
-        #         return self.get_index_of(smoothed_angle)
-    
-        # # if not cornering, use normal point selection
-        # selected_point = self.point_selection(start_i, end_i)
-
-        # # smooth the tansition even in normal driving
-        # target_angle = self.get_angle_from_index(selected_point)                                                                                                                                                                     
-        # smoothed_angle = self.smooth_steering(target_angle)
-
-        # return self.get_index_of(smoothed_angle)
-    
-
-    #---------
-
-        # OLD CODE RETURN
         return self.point_selection(start_i, end_i) 
     
     # NEW CODE HELPER METHOD (cornering/turning)
@@ -355,11 +280,6 @@ class GapFinder:
             if gap[-1] > max_index:
                 gap[-1] = max_index
             valid_gaps.append(gap)
-
-        # print(min_index, max_index)
-        # print([(gap[0], gap[-1]) for gap in gaps if len(gap) > self.min_gap_size])
-        # print([(gap[0], gap[-1]) for gap in valid_gaps])
-
         return valid_gaps
 
 
@@ -400,14 +320,24 @@ class GapFinder:
         # Filter out small gaps
         valid_gaps = self.filter_gaps(gaps)
 
-        min_gap_distance = self.min_gap_distance
-        while len(valid_gaps) == 0 and min_gap_distance > 0:
-            min_gap_distance -= 0.25
-            too_close = np.where(self.ranges < self.min_gap_distance)[0]
-            gaps = np.split(np.arange(len(self.ranges)), too_close)
-            valid_gaps = self.filter_gaps(gaps)
+        #checking if there are valid gaps in the raceline
+        valid_gaps_in_raceline = []
+        for gap in valid_gaps:
+            if self.is_gap_in_raceline(gap):
+                valid_gaps_in_raceline.append(gap)
 
-        return valid_gaps
+        if not valid_gaps_in_raceline:
+            rospy.logwarn("No valid gaps detected in the raceline, switching to cc.")
+            return 0, len(self.ranges) - 1  # full range for cc
+
+        return valid_gaps_in_raceline
+    
+    def is_gap_in_raceline(self, gap):
+        start_idx, end_idx = gap  
+        for raceline in self.racelines:
+            if start_idx >= raceline[0] and end_idx <= raceline[1]:
+                return True
+        return False
     
     def get_index_of(self, degrees):
         angle_rad = math.radians(degrees)

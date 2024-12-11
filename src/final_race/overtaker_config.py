@@ -17,4 +17,6 @@ class Sectors:
     DANGER = 2
 
 # Racelines are the paths that the overtaker can choose between
-RACELINES = ["edited_raceline", "mindist_boundary", "mindist", "mincurve", "drawn_w_speed", "demoline"]
+RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
+
+CC_DISTANCE = 1.5 
