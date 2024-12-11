@@ -22,4 +22,7 @@ class Sectors:
 # Racelines are the paths that the overtaker can choose between
 RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
 
+# Racelines in the order the overtaker can choose between
+RACELINES_IN_ORDER = ["mincurve"]
+
 CC_DISTANCE = 1.5
