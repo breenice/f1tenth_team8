@@ -4,9 +4,15 @@ import numpy as np
 import math
 from std_msgs.msg import Int32, String, Float32
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import PoseStamped, Point
+from geometry_msgs.msg import PoseStamped, Point, TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
+import tf
 from overtaker_config import *
+
+from laser_geometry import LaserProjection
+import tf2_ros
+import tf2_sensor_msgs.tf2_sensor_msgs as tf2_sensor_msgs
+from sensor_msgs.point_cloud2 import read_points
 
 # Map metadata from the YAML file
 origin_x, origin_y = -6.977912, -3.423147  # Origin of the map
@@ -22,7 +28,7 @@ class DriveModeSelector:
         self.cc_pub = rospy.Publisher('/{}/cruise_mult'.format(CAR_NAME), Float32, queue_size=1)
         self.obstacle_pub = rospy.Publisher('/{}/obstacles'.format(CAR_NAME), MarkerArray, queue_size=1)
         
-        self.map = cv2.imread('base_map.pgm', cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.imread("/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm", cv2.IMREAD_GRAYSCALE)
         
         self.current_pose = None
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), 
@@ -30,6 +36,9 @@ class DriveModeSelector:
         
         self.obstacle_points = []
         rospy.Subscriber("/car_8/scan", LaserScan, self.scan_callback)
+
+        self.counter = 0
+        self.every = 1
 
 
     def pose_callback(self, msg):
@@ -39,31 +48,94 @@ class DriveModeSelector:
         if self.current_pose is None:
             return
         
-        x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
-        theta_r = self.current_pose.orientation.z
+        self.counter += 1
+        if self.counter < self.every:
+            return
+        self.counter = 0
 
-        angle_min = -(self.data.angle_min % math.pi)
-
-        global_points = []
-        for i in range(len(scan.ranges)):
-            angle = angle_min + i * scan.angle_increment
-            x_local = scan.ranges[i] * math.cos(angle)
-            y_local = scan.ranges[i] * math.sin(angle)
         
-            x_global = x_r + x_local * math.cos(theta_r) - y_local * math.sin(theta_r)
-            y_global = y_r + x_local * math.sin(theta_r) + y_local * math.cos(theta_r)
+        # listener = tf.TransformListener()
+        # listener.waitForTransform("map", scan.header.frame_id, rospy.Time(0), rospy.Duration(0.1))
+        # (trans, rot) = listener.lookupTransform("map", scan.header.frame_id, scan.header.stamp)
+        
+        # projector = LaserProjection()
+        # point_cloud = projector.projectLaser(scan)
 
-            global_points.append((x_global, y_global))
+        # tf_buffer = tf2_ros.Buffer()
+        # tf_listener = tf2_ros.TransformListener(tf_buffer)
+        # transform_stamped = tf_buffer.lookup_transform("map", point_cloud.header.frame_id, rospy.Time(0), rospy.Duration(0.1))
+        # print(transform_stamped)
+        # x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
+        # rot = tf.transformations.euler_from_quaternion((self.current_pose.orientation.x,
+        #                                             self.current_pose.orientation.y,
+        #                                             self.current_pose.orientation.z,
+        #                                             self.current_pose.orientation.w))
+        # theta_r = rot[2]
 
-        obstacle_points = []
-        for px, py in global_points:
-            map_x = int((px - origin_x) / resolution)
-            map_y = int((py - origin_y) / resolution)
-            if self.is_wall(map_x, map_y):
-                obstacle_points.append((px, py))
 
-        self.visualize_obstacles(obstacle_points)
-        self.obstacle_points = obstacle_points
+        # transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
+        # point_cloud_map = tf2_sensor_msgs.do_transform_cloud(point_cloud, transform_stamped)
+
+        # point_generator = read_points(
+        #     point_cloud_map,
+        #     field_names=("x","y"),
+        #     skip_nans=True
+        # )
+
+        # global_points = []
+        # for x, y in point_generator:
+        #     global_points.append((y, x))
+
+        # angle_min = -(scan.angle_min % math.pi)
+
+        # global_points = [(0, 0), (0, 1)]
+        # print("pose", x_r, y_r)
+        # for i in range(len(scan.ranges)):
+        #     if i % 5 != 0:
+        #         continue
+        #     if math.isnan(scan.ranges[i]):
+        #         continue
+        #     angle = angle_min + i * scan.angle_increment
+        #     x_local = -scan.ranges[i] * math.cos(angle)
+        #     y_local = scan.ranges[i] * math.sin(angle)
+
+        
+        #     x_transformed = x_local + y_r # x_r + x_local * math.cos(theta_r) + y_local * math.sin(theta_r)
+        #     y_transformed = y_local + x_r # y_r - x_local * math.sin(theta_r) + y_local * math.cos(theta_r)
+
+        #     x_rotated = x_transformed * math.cos(theta_r) + y_transformed * math.sin(theta_r)
+        #     y_rotated = - x_transformed * math.sin(theta_r) + y_transformed * math.cos(theta_r)
+
+        #     global_points.append((x_rotated, y_rotated))
+
+        # obstacle_points = []
+        # for px, py in global_points:
+        #     map_x = int((px - origin_x) / resolution)
+        #     map_y = self.map.shape[0] - int((py - origin_y) / resolution)
+        #     if not self.is_wall(map_x, map_y):
+        #         obstacle_points.append((px, py))
+
+        # self.visualize_obstacles(global_points)
+        # self.obstacle_points = obstacle_points
+
+    def make_transform(self, x, y, rot):
+        trans = TransformStamped()
+        trans.header.stamp = rospy.Time.now()
+        trans.header.frame_id = "map"
+        trans.child_frame_id = "car_8_laser"
+
+        trans.transform.translation.x = x
+        trans.transform.translation.y = y
+        trans.transform.translation.z = 0
+
+        trans.transform.rotation.x = rot.x
+        trans.transform.rotation.y = rot.y
+        trans.transform.rotation.z = rot.z
+        trans.transform.rotation.w = rot.w
+
+        return trans
+
+
 
     def visualize_obstacles(self, obstacle_points):
         # Create marker array for visualization
@@ -78,16 +150,13 @@ class DriveModeSelector:
         marker.pose.orientation.w = 1.0
         marker.scale.x = 0.1
         marker.scale.y = 0.1
-        marker.color.r = 1.0
+        marker.color.b = 1.0
         marker.color.a = 1.0
 
         for px, py in obstacle_points:
-            # Convert back to global coordinates
-            x = px * resolution + origin_x
-            y = py * resolution + origin_y
             point = Point()
-            point.x = x
-            point.y = y
+            point.x = py
+            point.y = px
             point.z = 0.0
             marker.points.append(point)
 

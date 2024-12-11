@@ -6,7 +6,7 @@ from drive_mode_selector import DriveModeSelector
 from get_sectors import GetSectors
 
 MODES = ["TIME_TRIAL", "OVERTAKE"]
-MODE = MODES[0]
+MODE = MODES[1]
 
 
 if __name__ == "__main__":
@@ -19,7 +19,7 @@ if __name__ == "__main__":
         elif MODE == MODES[1]:
             rospy.init_node("overtaker", anonymous=True)
             overtaker = OvertakerControl()
-            # dms = DriveModeSelector()
+            dms = DriveModeSelector()
             sector = GetSectors()
             rospy.spin()
     except rospy.ROSInterruptException:

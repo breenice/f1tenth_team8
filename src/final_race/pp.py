@@ -54,7 +54,7 @@ class PurePursuit:
         """
         Function to construct the path from a CSV file
         """
-        self.raceline_merchant.construct_path(trajectory_name)
+        self.raceline_merchant.construct_path(trajectory_name, publish=True)
         self.plan = self.raceline_merchant.plan
         self.speed_plan = self.raceline_merchant.speed_plan
 
@@ -100,7 +100,9 @@ class PurePursuit:
             target = self.target
 
         alpha = math.atan2(target[1] - self.odom[1], target[0] - self.odom[0]) - self.heading
-        steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), self.lookahead_distance)
+        alpha = math.atan2(math.sin(alpha), math.cos(alpha))
+
+        steering_angle = math.atan(2 * WHEELBASE_LEN * math.sin(alpha)/ 1.2)
         steering_angle = math.degrees(steering_angle)
         # print("Alpha:", alpha, "Steering Angle:", steering_angle)
         return steering_angle
@@ -110,14 +112,18 @@ class PurePursuit:
         target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.velo_lookahead_distance)
         vel_target = (self.plan[target_index][0], self.plan[target_index][1])
 
-        vel_angle = self.get_steering_angle(vel_target)
-        return (120 - vel_angle) * 0.8
+        # vel_angle = self.get_steering_angle(vel_target)
+        # return (120 - vel_angle) * 0.8
 
         distance = self._get_distance(self.base_proj, vel_target)
 
         velo = distance * VELO_MULT * self.sector_velo_mult
         velo = max(self.min_speed, min(self.max_speed, velo))
         return velo
+    
+        target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.velo_lookahead_distance / 4)
+        read_speed = self.speed_plan[target_index]
+        return read_speed * 10
     
     def get_raceline_point_dist_away(self, point_ind, dist):
         """

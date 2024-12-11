@@ -28,8 +28,8 @@ class GetSectors():
         self.raceline_merchant = RacelineMerchant()
         self.plan = self.construct_path()
 
-        rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped, self.mpp_control)
         self.command_pub = rospy.Publisher('/{}/sector'.format(CAR_NAME), Int32, queue_size=1)
+        rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped, self.mpp_control)
 
     def construct_path(self):
         """
@@ -86,4 +86,5 @@ class GetSectors():
     def publish_command(self):
         command = Sectors()
         command = self.sector
+        print("sector: ", sec_ind_to_name[self.sector])
         self.command_pub.publish(command)

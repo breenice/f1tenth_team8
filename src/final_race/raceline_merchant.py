@@ -22,7 +22,7 @@ class RacelineMerchant:
             self.plan = []
             self.raceline_pub = rospy.Publisher('/{}/raceline'.format(CAR_NAME), PolygonStamped, queue_size=1)
 
-    def construct_path(self, trajectory_name):
+    def construct_path(self, trajectory_name, publish=False):
         """
         Function to construct the path from a CSV file. Uses caching to avoid re-reading files.
         """
@@ -56,7 +56,8 @@ class RacelineMerchant:
         self._cache[trajectory_name] = self.plan[:]
 
         # Publish the new raceline
-        self.publish_raceline()
+        if publish:
+            self.publish_raceline()
 
     def publish_raceline(self):
         """
