@@ -2,8 +2,8 @@ import cv2
 import rospy
 import numpy as np
 import math
-from std_msgs.msg import Int32, String, Float32
-from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Int32, String, Float32, Header
+from sensor_msgs.msg import LaserScan, PointCloud2
 from geometry_msgs.msg import PoseStamped, Point, TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
 import tf
@@ -12,7 +12,7 @@ from overtaker_config import *
 from laser_geometry import LaserProjection
 import tf2_ros
 import tf2_sensor_msgs.tf2_sensor_msgs as tf2_sensor_msgs
-from sensor_msgs.point_cloud2 import read_points
+from sensor_msgs.point_cloud2 import read_points, create_cloud_xyz32
 
 # from now viewing gaps
 #from ftg_config import MAX_LIDAR_DISTANCE, MAXIMUM_SPEED
@@ -31,7 +31,7 @@ class DriveModeSelector:
         self.drive_mode_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
         self.raceline_pub = rospy.Publisher('/{}/select_raceline'.format(CAR_NAME), String, queue_size=1)
         self.cc_pub = rospy.Publisher('/{}/cruise_mult'.format(CAR_NAME), Float32, queue_size=1)
-        self.obstacle_pub = rospy.Publisher('/{}/obstacles'.format(CAR_NAME), MarkerArray, queue_size=1)
+        self.obstacle_pub = rospy.Publisher('/{}/obstacles'.format(CAR_NAME), PointCloud2, queue_size=1)
         
         self.map = cv2.imread("/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm", cv2.IMREAD_GRAYSCALE)
         
@@ -60,9 +60,9 @@ class DriveModeSelector:
         
         # from now viewing gaps
          
-         ranges = np.array(scan.ranges)
-         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
-         ranges[ranges < 0.05] = MAX_LIDAR_DISTANCE
+        #  ranges = np.array(scan.ranges)
+        #  ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
+        #  ranges[ranges < 0.05] = MAX_LIDAR_DISTANCE
 
     #     # process scan with disparity extender
     #     disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
@@ -93,52 +93,58 @@ class DriveModeSelector:
         #     self.set_mode_cc()
         
         #this is what you edited after my code
-         raceline = self.ftg_raceline_control.ftg_control(scan)
-         print("Choosing raceline: ", raceline)
-         if raceline:
-             self.set_raceline(raceline)
-         else:
-             self.set_raceline(RACELINES_IN_ORDER[0])
-             self.set_mode_cc(scan)
-        #
+        #  raceline = self.ftg_raceline_control.ftg_control(scan)
+        #  print("Choosing raceline: ", raceline)
+        #  if raceline:
+        #      self.set_raceline(raceline)
+        #  else:
+        #      self.set_raceline(RACELINES_IN_ORDER[0])
+        #      self.set_mode_cc(scan)
+        # #
         
-        self.counter += 1
-        if self.counter < self.every:
-            return
-        self.counter = 0
+        # self.counter += 1
+        # if self.counter < self.every:
+        #     return
+        # self.counter = 0
 
         
         # listener = tf.TransformListener()
         # listener.waitForTransform("map", scan.header.frame_id, rospy.Time(0), rospy.Duration(0.1))
         # (trans, rot) = listener.lookupTransform("map", scan.header.frame_id, scan.header.stamp)
         
-        # projector = LaserProjection()
-        # point_cloud = projector.projectLaser(scan)
+        projector = LaserProjection()
+        point_cloud = projector.projectLaser(scan)
 
         # tf_buffer = tf2_ros.Buffer()
         # tf_listener = tf2_ros.TransformListener(tf_buffer)
         # transform_stamped = tf_buffer.lookup_transform("map", point_cloud.header.frame_id, rospy.Time(0), rospy.Duration(0.1))
-        # print(transform_stamped)
-        # x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
-        # rot = tf.transformations.euler_from_quaternion((self.current_pose.orientation.x,
-        #                                             self.current_pose.orientation.y,
-        #                                             self.current_pose.orientation.z,
-        #                                             self.current_pose.orientation.w))
+
+        x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
+        rot = tf.transformations.euler_from_quaternion((self.current_pose.orientation.x,
+                                                    self.current_pose.orientation.y,
+                                                    self.current_pose.orientation.z,
+                                                    self.current_pose.orientation.w))
+        transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
+
+
+        print(x_r, y_r)
+        print(self.current_pose.orientation)
+        print(transform_stamped)
+
         # theta_r = rot[2]
 
 
-        # transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
-        # point_cloud_map = tf2_sensor_msgs.do_transform_cloud(point_cloud, transform_stamped)
+        point_cloud_map = tf2_sensor_msgs.do_transform_cloud(point_cloud, transform_stamped)
 
-        # point_generator = read_points(
-        #     point_cloud_map,
-        #     field_names=("x","y"),
-        #     skip_nans=True
-        # )
+        point_generator = read_points(
+            point_cloud_map,
+            field_names=("x","y"),
+            skip_nans=True
+        )
 
-        # global_points = []
-        # for x, y in point_generator:
-        #     global_points.append((y, x))
+        global_points = []
+        for x, y in point_generator:
+            global_points.append((y, x))
 
         # angle_min = -(scan.angle_min % math.pi)
 
@@ -162,21 +168,24 @@ class DriveModeSelector:
 
         #     global_points.append((x_rotated, y_rotated))
 
-        # obstacle_points = []
-        # for px, py in global_points:
-        #     map_x = int((px - origin_x) / resolution)
-        #     map_y = self.map.shape[0] - int((py - origin_y) / resolution)
-        #     if not self.is_wall(map_x, map_y):
-        #         obstacle_points.append((px, py))
+        obstacle_points = []
+        for px, py in global_points:
+            map_x = int((py - origin_x) / resolution)
+            map_y = self.map.shape[0] - int((px - origin_y) / resolution)
+            if not self.is_wall(map_x, map_y):
+                obstacle_points.append((px, py))
 
-        # self.visualize_obstacles(global_points)
-        # self.obstacle_points = obstacle_points
+        obstacle_points.append((0, 0))
+        obstacle_points.append((1, 0))
+
+        self.visualize_obstacles(obstacle_points)
+        self.obstacle_points = obstacle_points
 
     def make_transform(self, x, y, rot):
         trans = TransformStamped()
         trans.header.stamp = rospy.Time.now()
-        trans.header.frame_id = "map"
-        trans.child_frame_id = "car_8_laser"
+        trans.header.frame_id = "car_8_laser"
+        trans.child_frame_id = "map"
 
         trans.transform.translation.x = x
         trans.transform.translation.y = y
@@ -192,30 +201,16 @@ class DriveModeSelector:
 
 
     def visualize_obstacles(self, obstacle_points):
-        # Create marker array for visualization
-        marker_array = MarkerArray()
-        marker = Marker()
-        marker.header.frame_id = "map"
-        marker.header.stamp = rospy.Time.now()
-        marker.ns = "obstacles"
-        marker.id = 0
-        marker.type = Marker.POINTS
-        marker.action = Marker.ADD
-        marker.pose.orientation.w = 1.0
-        marker.scale.x = 0.1
-        marker.scale.y = 0.1
-        marker.color.b = 1.0
-        marker.color.a = 1.0
+        header = Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = "map"
 
+        points = []
         for px, py in obstacle_points:
-            point = Point()
-            point.x = py
-            point.y = px
-            point.z = 0.0
-            marker.points.append(point)
+            points.append([py, px, 0.0])
 
-        marker_array.markers.append(marker)
-        self.obstacle_pub.publish(marker_array)
+        pc2 = create_cloud_xyz32(header, points)
+        self.obstacle_pub.publish(pc2)
 
     def is_wall(self, px, py):
         # Check surrounding points (OBSTACLE_WINDOW x OBSTACLE_WINDOW)

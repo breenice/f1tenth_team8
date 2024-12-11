@@ -25,6 +25,6 @@ RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
 # Racelines in the order the overtaker can choose between
 RACELINES_IN_ORDER = ["mincurve"]
 
-OBSTACLE_WINDOW = 25
+OBSTACLE_WINDOW = 10
 
 CC_DISTANCE = 1.5
