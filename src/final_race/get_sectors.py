@@ -20,6 +20,12 @@ sec_names = {
             "DANGER": Sectors.DANGER
         }
 
+sec_ind_to_name = {
+            Sectors.FREE : "FREE",
+            Sectors.MID : "MID",
+            Sectors.DANGER : "DANGER"
+        }
+
 class GetSectors():
     def __init__(self):
         self.raceline_merchant = RacelineMerchant()
@@ -40,8 +46,11 @@ class GetSectors():
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             self.sec_dict = {}
+            self.starts = []
+            self.secs = []
             for start, sector in csv_reader:
-                self.sec_dict[int(start)] = sector
+                self.starts.append(int(start))
+                self.secs.append(sector)
 
         self.raceline_merchant.construct_path("mindist")
 
@@ -54,9 +63,9 @@ class GetSectors():
 
     def get_sector(self):
         self.get_closest_idx()
-        for start, sector in self.sec_dict.items():
+        for i, start in enumerate(self.starts):
                 if self.closest_idx >= int(start):
-                    val = sec_names[sector]
+                    val = sec_names[self.secs[i]]
                     self.sector = val
 
         self.publish_command()

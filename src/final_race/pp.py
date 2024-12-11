@@ -84,6 +84,18 @@ class PurePursuit:
         Follow path starting from base_projection and get first point that is lookahead_distance away
         """
         lookahead_indices = int(self.speed_plan[self.base_proj_index] * 1.8) # 8
+        add_lookahead = 1
+        if self.sector == Sectors.FREE:
+            add_lookahead = 12
+        elif self.sector == Sectors.MID:
+            add_lookahead = 8
+        elif self.sector == Sectors.DANGER:
+            add_lookahead = 6
+        target_index = (self.base_proj_index + add_lookahead) % len(self.plan)
+        self.target = (self.plan[target_index - 1][0], self.plan[target_index - 1][1])
+        return 0
+
+        lookahead_indices = int(self.speed_plan[self.base_proj_index] * 1.8) # 8
         target_index = (self.base_proj_index + lookahead_indices) % len(self.plan)
         self.target = (self.plan[target_index - 1][0], self.plan[target_index - 1][1])
         return
@@ -127,10 +139,20 @@ class PurePursuit:
         """
         Compute the steering angle given the pose of the car, target point, and lookahead distance
         """
+
         alpha = math.atan2(self.target[1] - self.odom[1], self.target[0] - self.odom[0]) - self.heading
         steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), self.lookahead_distance)
         steering_angle = math.degrees(steering_angle)
         # print("Alpha:", alpha, "Steering Angle:", steering_angle)
+
+        if self.sector == Sectors.FREE:
+            return self.velo
+        elif self.sector == Sectors.MID:
+            return self.velo * 0.8
+        elif self.sector == Sectors.DANGER:
+            return self.velo * 0.6
+        return 0
+    
         return steering_angle
 
     def get_dynamic_velo(self, steering_angle):
@@ -145,16 +167,16 @@ class PurePursuit:
         target_index = (self.base_proj_index + 20) % len(self.plan)
         vel_target = (self.plan[target_index - 1][0], self.plan[target_index - 1][1])
 
-        distance = self._get_distance(self.base_proj, vel_target) - 1.5
+        distance = self._get_distance(self.base_proj, vel_target) - 1
 
-        velo = max(30, distance * 30)
+        self.velo = max(15, distance * 20)
 
         if self.sector == Sectors.FREE:
-            return velo
+            return self.velo
         elif self.sector == Sectors.MID:
-            return velo * 0.8
+            return self.velo * 0.8
         elif self.sector == Sectors.DANGER:
-            return velo * 0.5
+            return self.velo * 0.6
         return 0
 
         if not self.speed_plan:
