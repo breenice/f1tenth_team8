@@ -14,6 +14,11 @@ import tf2_ros
 import tf2_sensor_msgs.tf2_sensor_msgs as tf2_sensor_msgs
 from sensor_msgs.point_cloud2 import read_points
 
+# from now viewing gaps
+#from ftg_config import MAX_LIDAR_DISTANCE, MAXIMUM_SPEED
+#from ftg_raceline_control import FTGRacelineControl
+#
+
 # Map metadata from the YAML file
 origin_x, origin_y = -6.977912, -3.423147  # Origin of the map
 resolution = 0.025000  # Resolution of the map
@@ -39,6 +44,10 @@ class DriveModeSelector:
 
         self.counter = 0
         self.every = 1
+        
+        # from now viewing gaps
+        # self.ftg_raceline_control = FTGRacelineControl()
+        #
 
 
     def pose_callback(self, msg):
@@ -47,6 +56,51 @@ class DriveModeSelector:
     def scan_callback(self, scan):
         if self.current_pose is None:
             return
+
+        
+        # from now viewing gaps
+         
+         ranges = np.array(scan.ranges)
+         ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
+         ranges[ranges < 0.05] = MAX_LIDAR_DISTANCE
+
+    #     # process scan with disparity extender
+    #     disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
+    #     processed_ranges = disparity_extender.extend_disparities(ranges, scan.angle_increment)
+        
+    #     # find gaps
+    #     gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
+    #     gap_finder.update_data(processed_ranges, scan)
+        
+    #     try:
+    #         # largest gap
+    #         start_i, end_i = gap_finder.get_gap()
+    #         gap_width = end_i - start_i
+    #         gap_depth = min(processed_ranges[start_i:end_i])
+            
+            # which raceline to use based on gap
+        #     if gap_width > MIN_GAP_SIZE * 2:  # large gap - use center
+        #         self.set_raceline('mindist')
+        #     elif gap_depth > MAX_LIDAR_DISTANCE * 0.8:  # deep gap - use outer
+        #         self.set_raceline('mindist_boundry')
+        #     elif gap_width > MIN_GAP_SIZE:  # smaller gap - use inner
+        #         self.set_raceline('mincurve')
+        #     else:  # cc
+        #         self.set_mode_cc()
+                
+        # except:
+        #     # if gap finding fails, switch to cc
+        #     self.set_mode_cc()
+        
+        #this is what you edited after my code
+         raceline = self.ftg_raceline_control.ftg_control(scan)
+         print("Choosing raceline: ", raceline)
+         if raceline:
+             self.set_raceline(raceline)
+         else:
+             self.set_raceline(RACELINES_IN_ORDER[0])
+             self.set_mode_cc(scan)
+        #
         
         self.counter += 1
         if self.counter < self.every:
@@ -197,8 +251,28 @@ class DriveModeSelector:
         # Get car's current position from data
         car_x = data.pose.position.x 
         car_y = data.pose.position.y
-
         min_distance = float('inf')
+
+        # from now viewing gaps
+        # get the index of the closest object in the scan between 30 and 150 degrees
+        #angle_min = -(data.angle_min % math.pi)
+        #ranges = np.array(data.ranges)
+        
+        # Convert angles to indices
+        #angle_30 = int((math.radians(30) - angle_min) / data.angle_increment)
+        #angle_150 = int((math.radians(150) - angle_min) / data.angle_increment)
+        
+        # Get ranges between 30 and 150 degrees
+        #front_ranges = ranges[angle_30:angle_150]
+        
+        # Replace inf, nan and small values with max range
+        #front_ranges = np.where(np.isnan(front_ranges), MAX_LIDAR_DISTANCE, front_ranges)
+        #front_ranges = np.where(np.isinf(front_ranges), MAX_LIDAR_DISTANCE, front_ranges)
+        #front_ranges[front_ranges < 0.05] = MAX_LIDAR_DISTANCE
+        
+        # Return minimum distance
+        #return np.min(front_ranges)
+        #
         
         # Check distance to each obstacle point
         for x, y in self.obstacle_points:
