@@ -4,7 +4,7 @@ import numpy as np
 import math
 import tf
 import tf2_ros
-import tf2_sensor_msgs.tf2_sensor_msgs as tf2_sensor_msgs
+from tf2_sensor_msgs import do_transform_cloud
 from sensor_msgs.msg import LaserScan, PointCloud2
 from geometry_msgs.msg import TransformStamped, PoseStamped
 from std_msgs.msg import Header
@@ -57,7 +57,7 @@ class ObstacleDetector:
         x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
         transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
 
-        point_cloud_map = tf2_sensor_msgs.do_transform_cloud(point_cloud, transform_stamped)
+        point_cloud_map = do_transform_cloud(point_cloud, transform_stamped)
 
         point_generator = read_points(
             point_cloud_map,
