@@ -20,61 +20,61 @@ class DriveModeSelector:
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), 
                         PoseStamped, self.pose_callback)
         
-        rospy.Subscriber("/car_8/scan", LaserScan, self.scan_callback)
+        # rospy.Subscriber("/car_8/scan", LaserScan, self.scan_callback)
         self.wall_threshold = 10
 
         # added disparity extender and gap finder
-        self.disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
-        self.gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
+        # self.disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
+        # self.gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
 
 
     def pose_callback(self, msg):
         self.current_pose = msg.pose
 
-    def scan_callback(self, scan):
-        """
-        TODO: use disparity extender to ID obstacles & gap finder. pick between racelines based on
-        1. larger gaps to cetner 2. deeper gaps to the outer raceline 3. smaller gaps to the inner raceline 
-        4. no gaps = cc
+    # def scan_callback(self, scan):
+    #     """
+    #     TODO: use disparity extender to ID obstacles & gap finder. pick between racelines based on
+    #     1. larger gaps to cetner 2. deeper gaps to the outer raceline 3. smaller gaps to the inner raceline 
+    #     4. no gaps = cc
         
-        """
-        #NEED TO ADD PARAMETERs FOR GAP FINDING AND CHANGE THIS IF NEEDED
+    #     """
+    #     #NEED TO ADD PARAMETERs FOR GAP FINDING AND CHANGE THIS IF NEEDED
 
-        if self.current_pose is None:
-            return
+    #     if self.current_pose is None:
+    #         return
 
-        # convert scan to ranges array and handle NaNs
-        ranges = np.array(scan.ranges)
-        ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
-        ranges[ranges < 0.05] = MAX_LIDAR_DISTANCE
+    #     # convert scan to ranges array and handle NaNs
+    #     ranges = np.array(scan.ranges)
+    #     ranges = np.where(np.isnan(ranges), MAX_LIDAR_DISTANCE, ranges)
+    #     ranges[ranges < 0.05] = MAX_LIDAR_DISTANCE
 
-        # process scan with disparity extender
-        disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
-        processed_ranges = disparity_extender.extend_disparities(ranges, scan.angle_increment)
+    #     # process scan with disparity extender
+    #     disparity_extender = DisparityExtender(DISPARITY_DISTANCE, SAFETY_EXTENSION, MAX_LIDAR_DISTANCE)
+    #     processed_ranges = disparity_extender.extend_disparities(ranges, scan.angle_increment)
         
-        # find gaps
-        gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
-        gap_finder.update_data(processed_ranges, scan)
+    #     # find gaps
+    #     gap_finder = GapFinder(GAP_SELECTION, POINT_SELECTION, MIN_GAP_SIZE, MIN_GAP_DISTANCE, CORNERING_DISTANCE)
+    #     gap_finder.update_data(processed_ranges, scan)
         
-        try:
-            # largest gap
-            start_i, end_i = gap_finder.get_gap()
-            gap_width = end_i - start_i
-            gap_depth = min(processed_ranges[start_i:end_i])
+    #     try:
+    #         # largest gap
+    #         start_i, end_i = gap_finder.get_gap()
+    #         gap_width = end_i - start_i
+    #         gap_depth = min(processed_ranges[start_i:end_i])
             
-            # which raceline to use based on gap
-            if gap_width > MIN_GAP_SIZE * 2:  # large gap - use center
-                self.set_raceline('mindist')
-            elif gap_depth > MAX_LIDAR_DISTANCE * 0.8:  # deep gap - use outer
-                self.set_raceline('mindist_boundry')
-            elif gap_width > MIN_GAP_SIZE:  # smaller gap - use inner
-                self.set_raceline('mincurve')
-            else:  # cc
-                self.set_mode_ftg()
+    #         # which raceline to use based on gap
+    #         if gap_width > MIN_GAP_SIZE * 2:  # large gap - use center
+    #             self.set_raceline('mindist')
+    #         elif gap_depth > MAX_LIDAR_DISTANCE * 0.8:  # deep gap - use outer
+    #             self.set_raceline('mindist_boundry')
+    #         elif gap_width > MIN_GAP_SIZE:  # smaller gap - use inner
+    #             self.set_raceline('mincurve')
+    #         else:  # cc
+    #             self.set_mode_ftg()
                 
-        except:
-            # if gap finding fails, switch to cc
-            self.set_mode_ftg()
+    #     except:
+    #         # if gap finding fails, switch to cc
+    #         self.set_mode_ftg()
 
     def set_mode_stop(self):
         self.drive_mode_pub.publish(DriveMode.STOP)

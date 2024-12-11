@@ -2,7 +2,7 @@ import rospy
 import os
 import csv
 import math
-import overtaker_config
+from overtaker_config import *
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDrive
@@ -11,44 +11,65 @@ from std_msgs.msg import Int32, String
 from multi_pp_control import MultiPPControl
 # from ftg_control import FTGControl
 from overtaker_config import *
+from raceline_merchant import RacelineMerchant
 PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'
 
-class GetSectors():
-    def __init__(self):
-        rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped,self.mpp_control)
-        self.command_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
-
-        self.plan = self.construct_path()
-
-    def construct_path(self):
-        """
-        Function to construct the path from a CSV file
-        """
-        self.raceline_merchant.construct_path("mindist")
-        return self.raceline_merchant.plan
-
-    def mpp_control(self, data):
-        self.pose = data.pose
-
-    def get_sector(self):
-        self.get_closest_idx()
-
-        file_path = os.path.expanduser(
-            '{}/{}.csv'.format(PATH_FOLDER, "sectors"))
-        
-        sec_names = {
+sec_names = {
             "FREE": Sectors.FREE,
             "MID": Sectors.MID,
             "DANGER": Sectors.DANGER
         }
 
+class GetSectors():
+    def __init__(self):
+        rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped,self.mpp_control)
+        self.command_pub = rospy.Publisher('/{}/sector'.format(CAR_NAME), Int32, queue_size=1)
+        self.raceline_merchant = RacelineMerchant()
+
+        self.plan = self.construct_path()
+
+
+    def construct_path(self):
+        """
+        Function to construct the path from a CSV file
+        """
+
+        file_path = os.path.expanduser(
+            '{}/{}.csv'.format(PATH_FOLDER, "sectors"))
+
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
+            self.sec_dict = {}
             for start, sector in csv_reader:
+                self.sec_dict[start] = sector
+
+        self.raceline_merchant.construct_path("mindist")
+
+        return self.raceline_merchant.plan
+
+    def mpp_control(self, data):
+        x,y = data.pose.position.x, data.pose.position.y
+        self.pose = (x,y)
+        self.get_sector()
+
+    def get_sector(self):
+        self.get_closest_idx()
+
+        for start, sector in self.sec_csv:
+            if self.closest_idx >= int(start):
+                mapped_type = sec_names["int"]
+                val = mapped_type(sector) 
+                self.sector = val
+
+        print(val)
+                
+        for start, sector in self.sect_dict:
                 if self.closest_idx >= int(start):
-                    mapped_type = string_to_type["int"]
+                    mapped_type = sec_names["int"]
                     val = mapped_type(sector) 
                     self.sector = val
+
+        self.publish_command()
 
     
     def get_closest_idx(self):
@@ -58,7 +79,7 @@ class GetSectors():
         min_dist = float('inf')
         base_projection_index = 0  # index to store waypoint on the path
         for index, point in enumerate(self.plan):
-            distance = self._get_distance(self.odom, point)
+            distance = self._get_distance(self.pose, point)
             if distance < min_dist:
                 min_dist = distance
                 base_projection_index = index
@@ -71,4 +92,5 @@ class GetSectors():
     def publish_command(self):
         command = Sectors()
         command = self.sector
+        print(self.sector)
         self.command_pub.publish(command)
