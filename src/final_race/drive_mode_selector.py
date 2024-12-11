@@ -2,7 +2,7 @@ import cv2
 import rospy
 import numpy as np
 import math
-from std_msgs.msg import Int32, String, Float32, Header
+from std_msgs.msg import Int32, String, Float32, Header, Int16
 from sensor_msgs.msg import LaserScan, PointCloud2
 from geometry_msgs.msg import PoseStamped, Point, TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
@@ -32,7 +32,7 @@ class DriveModeSelector:
     def __init__(self):
         self.drive_mode_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
         self.raceline_pub = rospy.Publisher('/{}/select_raceline'.format(CAR_NAME), String, queue_size=1)
-        self.cc_pub = rospy.Publisher('/{}/cruise_mult'.format(CAR_NAME), Float32, queue_size=1)
+        self.drive_mult_pub = rospy.Publisher('/{}/speed_mult'.format(CAR_NAME), Float32, queue_size=1)
         self.obstacle_pub = rospy.Publisher('/{}/obstacles'.format(CAR_NAME), PointCloud2, queue_size=1)
         
         self.map = cv2.imread("/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm", cv2.IMREAD_GRAYSCALE)
@@ -50,19 +50,28 @@ class DriveModeSelector:
         # self.ftg_raceline_control = FTGRacelineControl()
         #
 
+        self.current_sector = None
+        rospy.Subscriber('/{}/current_sector'.format(CAR_NAME), Int16, self.sector_callback)
 
+
+    def sector_callback(self, msg):
+        self.current_sector = msg.data
+    
     def pose_callback(self, msg):
         self.current_pose = msg.pose
+
         obstacles = self.obstacle_detector.get_obstacle_points()
 
+        raceline = None
         for raceline_name in RACELINES_IN_ORDER:
             raceline_points = self.raceline_merchant.construct_raceline(raceline_name)
             if self.is_path_clear(raceline_points, obstacles):
-                self.set_raceline(raceline_name)
-                return
-                
-        self.set_mode_cc()
+                raceline = raceline_name
 
+        if self.current_sector == Sectors.FREE and raceline is not None:
+            self.set_raceline(raceline)
+        else:
+            self.set_mode_cc()
 
     def is_path_clear(self, raceline_points, obstacles):
         total_dist = 0
@@ -182,6 +191,9 @@ class DriveModeSelector:
 
     def set_mode_stop(self):
         self.drive_mode_pub.publish(DriveMode.STOP)
+
+    def set_drive_mult(self, mult):
+        self.drive_mult_pub.publish(mult)
         
     def set_mode_cc(self):
         self.raceline_pub.publish(RACELINES_IN_ORDER[0])
@@ -190,11 +202,9 @@ class DriveModeSelector:
         closest_distance = self.get_closest_object() # closest point (in front)
 
         if closest_distance < CC_DISTANCE: 
-            self.cc_pub.publish(0.0)
+            self.set_drive_mult(0.0)
         else:
-            self.cc_pub.publish(1.0)
-        
-        self.drive_mode_pub.publish(DriveMode.CC)
+            self.set_drive_mult(1.0)
 
     def get_closest_object(self):
         # If no obstacle points, return max distance

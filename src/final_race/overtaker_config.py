@@ -5,14 +5,6 @@ class DriveMode:
     STOP = 0
     PP = 1
 
-
-class SpeedMode:
-    STOP = 0
-    PP = 1
-    CC = 2  # Cruise Control
-    OT = 3  # Overtake
-
-
 class Sectors:
     FREE = 0
     MID = 1
