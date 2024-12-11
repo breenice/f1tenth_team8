@@ -20,7 +20,7 @@ class MultiPPControl:
 
         self.pp_visualizer = PPVisualizer()
 
-        self.pp = PurePursuit(LOOKAHEAD_DISTANCE, VELO_LOOKAHEAD_METERS, MIN_SPEED, MAX_SPEED)
+        self.pp = PurePursuit(LOOKAHEAD_DISTANCE, MIN_SPEED, MAX_SPEED)
         self.select_raceline(self.racelines[0])
 
     def select_raceline(self, raceline):
@@ -55,14 +55,7 @@ class MultiPPControl:
         steering_angle *= STEERING_MULTIPLIER
         steering_angle = max(-STEERING_RANGE, min(STEERING_RANGE, steering_angle))
         command.steering_angle = steering_angle
-
-        # Dynamic speed from ftg algo
-        # abs_steering_angle = abs(steering_angle)
-        # if abs_steering_angle >= 100:
-        #     command.speed = MIN_SPEED
-        # else:
-        #     command.speed = MAX_SPEED - ((abs_steering_angle / 100.0) * (MAX_SPEED - MIN_SPEED))
-        command.speed = self.pp.get_dynamic_velo(steering_angle)
+        command.speed = self.pp.get_dynamic_velo()
 
         self.pp_visualizer.publish_rviz_markers(odom_x, odom_y, pose_x, pose_y, target_x, target_y)
         return command

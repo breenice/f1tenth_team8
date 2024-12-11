@@ -2,38 +2,34 @@ import rospy
 import os
 import csv
 import math
-from overtaker_config import *
 from geometry_msgs.msg import PoseStamped
-from sensor_msgs.msg import LaserScan
-from ackermann_msgs.msg import AckermannDrive
 from std_msgs.msg import Int32, String
 
-from multi_pp_control import MultiPPControl
-# from ftg_control import FTGControl
 from overtaker_config import *
 from raceline_merchant import RacelineMerchant
+
 PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'
 
 sec_names = {
-            "FREE": Sectors.FREE,
-            "MID": Sectors.MID,
-            "DANGER": Sectors.DANGER
-        }
+    "FREE": Sectors.FREE,
+    "MID": Sectors.MID,
+    "DANGER": Sectors.DANGER
+}
 
 sec_ind_to_name = {
-            Sectors.FREE : "FREE",
-            Sectors.MID : "MID",
-            Sectors.DANGER : "DANGER"
-        }
+    Sectors.FREE: "FREE",
+    Sectors.MID: "MID",
+    Sectors.DANGER: "DANGER"
+}
+
 
 class GetSectors():
     def __init__(self):
         self.raceline_merchant = RacelineMerchant()
         self.plan = self.construct_path()
 
-        rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped,self.mpp_control)
+        rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped, self.mpp_control)
         self.command_pub = rospy.Publisher('/{}/sector'.format(CAR_NAME), Int32, queue_size=1)
-
 
     def construct_path(self):
         """
@@ -57,20 +53,19 @@ class GetSectors():
         return self.raceline_merchant.plan
 
     def mpp_control(self, data):
-        x,y = data.pose.position.x, data.pose.position.y
-        self.pose = (x,y)
+        x, y = data.pose.position.x, data.pose.position.y
+        self.pose = (x, y)
         self.get_sector()
 
     def get_sector(self):
         self.get_closest_idx()
         for i, start in enumerate(self.starts):
-                if self.closest_idx >= int(start):
-                    val = sec_names[self.secs[i]]
-                    self.sector = val
+            if self.closest_idx >= int(start):
+                val = sec_names[self.secs[i]]
+                self.sector = val
 
         self.publish_command()
 
-    
     def get_closest_idx(self):
         """
         Find closest point on the reference path to the car's current position

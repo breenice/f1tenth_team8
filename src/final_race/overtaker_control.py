@@ -1,11 +1,9 @@
 import rospy
 from geometry_msgs.msg import PoseStamped
-from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDrive
 from std_msgs.msg import Int32, String
 
 from multi_pp_control import MultiPPControl
-# from ftg_control import FTGControl
 from overtaker_config import *
 
 class OvertakerControl:
@@ -22,9 +20,6 @@ class OvertakerControl:
 
         self.pp_control = MultiPPControl()
         self.init_pp()
-
-        # self.ftg = FTGControl()
-        # self.init_ftg()
 
         self.current_speed = 0
         self.target_speed = 0
@@ -52,19 +47,6 @@ class OvertakerControl:
                 self.target_speed = speed
             self.publish_command(steering_angle)
             print("steering:", steering_angle, "speed:", speed)
-
-    # def init_ftg(self):
-    #     rospy.Subscriber("/car_8/scan", LaserScan, self.ftg_control)
-
-    # def ftg_control(self, data):
-    #     if self.drive_mode == DriveMode.FTG:
-    #         command = self.ftg.ftg_control(data)
-    #         steering_angle = command.steering_angle
-    #         speed = command.speed
-
-    #         if self.speed_mode == SpeedMode.FTG:
-    #             self.target_speed = speed
-    #         self.publish_command(steering_angle)
 
     def get_speed(self):
         if self.speed_mode == SpeedMode.STOP:
