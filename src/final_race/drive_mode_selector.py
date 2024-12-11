@@ -13,6 +13,8 @@ from laser_geometry import LaserProjection
 import tf2_ros
 import tf2_sensor_msgs.tf2_sensor_msgs as tf2_sensor_msgs
 from sensor_msgs.point_cloud2 import read_points, create_cloud_xyz32
+from obstacle_detector import ObstacleDetector
+from raceline_merchant import RacelineMerchant
 
 # from now viewing gaps
 #from ftg_config import MAX_LIDAR_DISTANCE, MAXIMUM_SPEED
@@ -39,9 +41,8 @@ class DriveModeSelector:
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), 
                         PoseStamped, self.pose_callback)
         
-        self.obstacle_points = []
-        rospy.Subscriber("/car_8/scan", LaserScan, self.scan_callback)
-
+        self.obstacle_detector = ObstacleDetector()
+        self.raceline_merchant = RacelineMerchant()
         self.counter = 0
         self.every = 1
         
@@ -52,6 +53,39 @@ class DriveModeSelector:
 
     def pose_callback(self, msg):
         self.current_pose = msg.pose
+        obstacles = self.obstacle_detector.get_obstacle_points()
+
+        for raceline_name in RACELINES_IN_ORDER:
+            raceline_points = self.raceline_merchant.construct_raceline(raceline_name)
+            if self.is_path_clear(raceline_points, obstacles):
+                self.set_raceline(raceline_name)
+                return
+                
+        self.set_mode_cc()
+
+
+    def is_path_clear(self, raceline_points, obstacles):
+        total_dist = 0
+        prev_point = raceline_points[0]
+        
+        for point in raceline_points[1:]:
+            # Calculate distance along raceline
+            total_dist += math.sqrt((point[0] - prev_point[0])**2 + (point[1] - prev_point[1])**2)
+            
+            # Stop checking if we've looked far enough ahead
+            if total_dist > RACELINE_LOOKAHEAD:
+                return True
+                
+            # Check if any obstacles are too close to this point
+            for obstacle in obstacles:
+                dist = math.sqrt((point[0] - obstacle[0])**2 + (point[1] - obstacle[1])**2)
+                if dist < SAFETY_DISTANCE:
+                    return False
+                    
+            prev_point = point
+            
+        return True
+
 
     def scan_callback(self, scan):
         if self.current_pose is None:
@@ -102,151 +136,80 @@ class DriveModeSelector:
         #      self.set_mode_cc(scan)
         # #
         
-        # self.counter += 1
-        # if self.counter < self.every:
-        #     return
-        # self.counter = 0
-
-        
-        # listener = tf.TransformListener()
-        # listener.waitForTransform("map", scan.header.frame_id, rospy.Time(0), rospy.Duration(0.1))
-        # (trans, rot) = listener.lookupTransform("map", scan.header.frame_id, scan.header.stamp)
-        
-        projector = LaserProjection()
-        point_cloud = projector.projectLaser(scan)
-
-        # tf_buffer = tf2_ros.Buffer()
-        # tf_listener = tf2_ros.TransformListener(tf_buffer)
-        # transform_stamped = tf_buffer.lookup_transform("map", point_cloud.header.frame_id, rospy.Time(0), rospy.Duration(0.1))
-
-        x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
-        rot = tf.transformations.euler_from_quaternion((self.current_pose.orientation.x,
-                                                    self.current_pose.orientation.y,
-                                                    self.current_pose.orientation.z,
-                                                    self.current_pose.orientation.w))
-        transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
+                
+        # projector = LaserProjection()
+        # point_cloud = projector.projectLaser(scan)
+        # x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
+        # rot = tf.transformations.euler_from_quaternion((self.current_pose.orientation.x,
+        #                                             self.current_pose.orientation.y,
+        #                                             self.current_pose.orientation.z,
+        #                                             self.current_pose.orientation.w))
+        # transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
 
 
-        print(x_r, y_r)
-        print(self.current_pose.orientation)
-        print(transform_stamped)
+        # print(x_r, y_r)
+        # print(self.current_pose.orientation)
+        # print(transform_stamped)
 
         # theta_r = rot[2]
 
 
-        point_cloud_map = tf2_sensor_msgs.do_transform_cloud(point_cloud, transform_stamped)
+        # point_cloud_map = tf2_sensor_msgs.do_transform_cloud(point_cloud, transform_stamped)
 
-        point_generator = read_points(
-            point_cloud_map,
-            field_names=("x","y"),
-            skip_nans=True
-        )
+        # point_generator = read_points(
+        #     point_cloud_map,
+        #     field_names=("x","y"),
+        #     skip_nans=True
+        # )
 
-        global_points = []
-        for x, y in point_generator:
-            global_points.append((y, x))
+        # global_points = []
+        # for x, y in point_generator:
+        #     global_points.append((y, x))
 
-        # angle_min = -(scan.angle_min % math.pi)
+        # obstacle_points = []
+        # for px, py in global_points:
+        #     map_x = int((py - origin_x) / resolution)
+        #     map_y = self.map.shape[0] - int((px - origin_y) / resolution)
+        #     if not self.is_wall(map_x, map_y):
+        #         obstacle_points.append((px, py))
 
-        # global_points = [(0, 0), (0, 1)]
-        # print("pose", x_r, y_r)
-        # for i in range(len(scan.ranges)):
-        #     if i % 5 != 0:
-        #         continue
-        #     if math.isnan(scan.ranges[i]):
-        #         continue
-        #     angle = angle_min + i * scan.angle_increment
-        #     x_local = -scan.ranges[i] * math.cos(angle)
-        #     y_local = scan.ranges[i] * math.sin(angle)
+        # obstacle_points.append((0, 0))
+        # obstacle_points.append((1, 0))
 
-        
-        #     x_transformed = x_local + y_r # x_r + x_local * math.cos(theta_r) + y_local * math.sin(theta_r)
-        #     y_transformed = y_local + x_r # y_r - x_local * math.sin(theta_r) + y_local * math.cos(theta_r)
-
-        #     x_rotated = x_transformed * math.cos(theta_r) + y_transformed * math.sin(theta_r)
-        #     y_rotated = - x_transformed * math.sin(theta_r) + y_transformed * math.cos(theta_r)
-
-        #     global_points.append((x_rotated, y_rotated))
-
-        obstacle_points = []
-        for px, py in global_points:
-            map_x = int((py - origin_x) / resolution)
-            map_y = self.map.shape[0] - int((px - origin_y) / resolution)
-            if not self.is_wall(map_x, map_y):
-                obstacle_points.append((px, py))
-
-        obstacle_points.append((0, 0))
-        obstacle_points.append((1, 0))
-
-        self.visualize_obstacles(obstacle_points)
-        self.obstacle_points = obstacle_points
-
-    def make_transform(self, x, y, rot):
-        trans = TransformStamped()
-        trans.header.stamp = rospy.Time.now()
-        trans.header.frame_id = "car_8_laser"
-        trans.child_frame_id = "map"
-
-        trans.transform.translation.x = x
-        trans.transform.translation.y = y
-        trans.transform.translation.z = 0
-
-        trans.transform.rotation.x = rot.x
-        trans.transform.rotation.y = rot.y
-        trans.transform.rotation.z = rot.z
-        trans.transform.rotation.w = rot.w
-
-        return trans
-
-
-
-    def visualize_obstacles(self, obstacle_points):
-        header = Header()
-        header.stamp = rospy.Time.now()
-        header.frame_id = "map"
-
-        points = []
-        for px, py in obstacle_points:
-            points.append([py, px, 0.0])
-
-        pc2 = create_cloud_xyz32(header, points)
-        self.obstacle_pub.publish(pc2)
-
-    def is_wall(self, px, py):
-        # Check surrounding points (OBSTACLE_WINDOW x OBSTACLE_WINDOW)
-        for dx in range(-OBSTACLE_WINDOW, OBSTACLE_WINDOW):
-            for dy in range(-OBSTACLE_WINDOW, OBSTACLE_WINDOW):
-                # Verify indices are within map bounds before accessing
-                if (0 <= py + dy < self.map.shape[0] and 
-                    0 <= px + dx < self.map.shape[1] and
-                    self.map[py + dy, px + dx] < 10): # Walls are 0
-                    return True
-        return False
+        # self.visualize_obstacles(obstacle_points)
+        # self.obstacle_points = obstacle_points
 
 
     def set_mode_stop(self):
         self.drive_mode_pub.publish(DriveMode.STOP)
         
-    def set_mode_cc(self, data):
+    def set_mode_cc(self):
+        self.raceline_pub.publish(RACELINES_IN_ORDER[0])
+
         # maintain a distance of 1.5 meters from the closest object ahead.        
-        closest_distance = self.get_closest_object(data) # closest point (in front)
+        closest_distance = self.get_closest_object() # closest point (in front)
 
         if closest_distance < CC_DISTANCE: 
-            self.cc_pub.publish(0.5)
+            self.cc_pub.publish(0.0)
         else:
             self.cc_pub.publish(1.0)
         
         self.drive_mode_pub.publish(DriveMode.CC)
 
-    def get_closest_object(self, data):
+    def get_closest_object(self):
         # If no obstacle points, return max distance
-        if not self.obstacle_points:
+        if not self.obstacle_detector.obstacle_points:
             return float('inf')
             
-        # Get car's current position from data
-        car_x = data.pose.position.x 
-        car_y = data.pose.position.y
+        car_x, car_y = self.current_pose.position.x, self.current_pose.position.y
         min_distance = float('inf')
+
+        for x, y in self.obstacle_detector.obstacle_points:
+            distance = math.sqrt((x - car_x)**2 + (y - car_y)**2)
+            min_distance = min(min_distance, distance)
+            
+        return min_distance
+
 
         # from now viewing gaps
         # get the index of the closest object in the scan between 30 and 150 degrees
@@ -269,13 +232,6 @@ class DriveModeSelector:
         #return np.min(front_ranges)
         #
         
-        # Check distance to each obstacle point
-        for x, y in self.obstacle_points:
-            distance = math.sqrt((x - car_x)**2 + (y - car_y)**2)
-            min_distance = min(min_distance, distance)
-            
-        return min_distance
-
     def set_mode_pp(self):
         self.drive_mode_pub.publish(DriveMode.PP)
 

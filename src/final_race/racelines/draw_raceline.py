@@ -4,7 +4,7 @@ from PIL import Image
 import csv
 
 # Load the map image
-map_image_path = 'map/base_map.pgm'
+map_image_path = '../map/base_map.pgm'
 map_image = Image.open(map_image_path)
 map_array = np.array(map_image)
 

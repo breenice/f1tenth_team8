@@ -26,5 +26,7 @@ RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
 RACELINES_IN_ORDER = ["mincurve"]
 
 OBSTACLE_WINDOW = 10
+RACELINE_LOOKAHEAD = 2.0
+SAFETY_DISTANCE = 0.2
 
 CC_DISTANCE = 1.5

@@ -1,7 +1,7 @@
 import rospy
 from geometry_msgs.msg import PoseStamped
 from ackermann_msgs.msg import AckermannDrive
-from std_msgs.msg import Int32, String
+from std_msgs.msg import Int32, String, Float32
 
 from multi_pp_control import MultiPPControl
 from overtaker_config import *
@@ -21,8 +21,10 @@ class OvertakerControl:
         self.pp_control = MultiPPControl()
         self.init_pp()
 
-        self.current_speed = 0
-        self.target_speed = 0
+        self.current_cc_mult = 1.0
+        self.target_cc_mult = 1.0
+
+        rospy.Subscriber('/{}/cruise_mult'.format(CAR_NAME), Float32, self.cc_mult_callback)
 
     def set_raceline(self, raceline):
         self.pp_control.select_raceline(raceline)
@@ -32,6 +34,9 @@ class OvertakerControl:
 
     def set_speed_mode(self, msg):
         self.speed_mode = msg.data
+
+    def cc_mult_callback(self, msg):
+        self.target_cc_mult = msg.data
 
     def init_pp(self):
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped,
@@ -43,8 +48,7 @@ class OvertakerControl:
             steering_angle = command.steering_angle
             speed = command.speed
 
-            if self.speed_mode == SpeedMode.PP:
-                self.target_speed = speed
+            self.target_speed = speed
             self.publish_command(steering_angle)
             print("steering:", steering_angle, "speed:", speed)
 
@@ -52,9 +56,13 @@ class OvertakerControl:
         if self.speed_mode == SpeedMode.STOP:
             return 0.0
         
-        # TODO: Add some acceleration control for smoothness
-
-        return self.target_speed
+        if self.speed_mode == SpeedMode.CC:
+            if self.target_cc_mult < self.current_cc_mult:
+                self.current_cc_mult = max(self.target_cc_mult, self.current_cc_mult - 0.05)
+            else:
+                self.current_cc_mult = self.target_cc_mult
+        
+        return self.target_speed * self.current_cc_mult
 
     def publish_command(self, steering_angle):
         command = AckermannDrive()
