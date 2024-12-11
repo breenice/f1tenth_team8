@@ -15,8 +15,7 @@ WHEELBASE_LEN = 0.325
 class PurePursuit:
     def __init__(self, lookahead_distance, min_speed, max_speed):
         self.lookahead_distance = lookahead_distance
-        self.lookahead_distance_index = 0
-        self.velo_lookahead_distance_index = 0
+        self.velo_lookahead_distance = 0
         self.sector_velo_mult = 0
         self.min_speed = min_speed
         self.max_speed = max_speed
@@ -39,16 +38,16 @@ class PurePursuit:
         self.sector = data.data
 
         if self.sector == Sectors.FREE:
-            self.lookahead_distance_index = FREE_LOOKAHEAD
-            self.velo_lookahead_distance_index = 2 * FREE_LOOKAHEAD
+            self.lookahead_distance = FREE_LOOKAHEAD
+            self.velo_lookahead_distance = 2 * FREE_LOOKAHEAD
             self.sector_velo_mult = FREE_VELO_MULT
         elif self.sector == Sectors.MID:
-            self.lookahead_distance_index = MID_LOOKAHEAD
-            self.velo_lookahead_distance_index = 2 * MID_LOOKAHEAD
+            self.lookahead_distance = MID_LOOKAHEAD
+            self.velo_lookahead_distance = 2 * MID_LOOKAHEAD
             self.sector_velo_mult = MID_VELO_MULT
         elif self.sector == Sectors.DANGER:
-            self.lookahead_distance_index = DANGER_LOOKAHEAD
-            self.velo_lookahead_distance_index = 2 * DANGER_LOOKAHEAD
+            self.lookahead_distance = DANGER_LOOKAHEAD
+            self.velo_lookahead_distance = 2 * DANGER_LOOKAHEAD
             self.sector_velo_mult = DANGER_VELO_MULT
 
     def construct_path(self, trajectory_name):
@@ -88,7 +87,8 @@ class PurePursuit:
         """
         Follow path starting from base_projection and get first point that is lookahead_distance away
         """
-        target_index = (self.base_proj_index + self.lookahead_distance_index) % len(self.plan)
+        # target_index = (self.base_proj_index + self.lookahead_distance_index) % len(self.plan)
+        target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.lookahead_distance_index)
         self.target = (self.plan[target_index][0], self.plan[target_index][1])
         return 0
 
@@ -105,14 +105,32 @@ class PurePursuit:
 
     def get_dynamic_velo(self):
         # # Dynamic speed based on further lookahead point
-        target_index = (self.base_proj_index + self.velo_lookahead_distance_index) % len(self.plan)
-        vel_target = (self.plan[target_index - 1][0], self.plan[target_index - 1][1])
+        target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.velo_lookahead_distance)
+        vel_target = (self.plan[target_index][0], self.plan[target_index][1])
 
         distance = self._get_distance(self.base_proj, vel_target)
 
         velo = distance * VELO_MULT * self.sector_velo_mult
         velo = max(self.min_speed, min(self.max_speed, velo))
         return velo
+    
+    def get_raceline_point_dist_away(self, point_ind, dist):
+        """
+        Returns the index of a point that is dist away from point_ind when following the raceline
+        """
+        current_dist = 0
+        current_ind = point_ind
+        
+        while current_dist < dist and current_ind < len(self.plan) - 1:
+            next_ind = (current_ind + 1) % len(self.plan)
+            segment_dist = self._get_distance(self.plan[current_ind], self.plan[next_ind])
+            current_dist += segment_dist
+            current_ind = next_ind
+            
+            if current_ind == point_ind:  # We've gone full circle
+                break
+                
+        return current_ind
 
     def _get_distance(self, p1, p2):
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
