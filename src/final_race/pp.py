@@ -88,7 +88,7 @@ class PurePursuit:
         Follow path starting from base_projection and get first point that is lookahead_distance away
         """
         # target_index = (self.base_proj_index + self.lookahead_distance_index) % len(self.plan)
-        target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.lookahead_distance_index)
+        target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.lookahead_distance)
         self.target = (self.plan[target_index][0], self.plan[target_index][1])
         return 0
 
