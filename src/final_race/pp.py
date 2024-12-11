@@ -92,12 +92,14 @@ class PurePursuit:
         self.target = (self.plan[target_index][0], self.plan[target_index][1])
         return 0
 
-    def get_steering_angle(self):
+    def get_steering_angle(self, target=None):
         """
         Compute the steering angle given the pose of the car, target point, and lookahead distance
         """
+        if target is None:
+            target = self.target
 
-        alpha = math.atan2(self.target[1] - self.odom[1], self.target[0] - self.odom[0]) - self.heading
+        alpha = math.atan2(target[1] - self.odom[1], target[0] - self.odom[0]) - self.heading
         steering_angle = math.atan2(2 * WHEELBASE_LEN * math.sin(alpha), self.lookahead_distance)
         steering_angle = math.degrees(steering_angle)
         # print("Alpha:", alpha, "Steering Angle:", steering_angle)
@@ -107,6 +109,9 @@ class PurePursuit:
         # # Dynamic speed based on further lookahead point
         target_index = self.get_raceline_point_dist_away(self.base_proj_index, self.velo_lookahead_distance)
         vel_target = (self.plan[target_index][0], self.plan[target_index][1])
+
+        vel_angle = self.get_steering_angle(vel_target)
+        return (120 - vel_angle) * 0.8
 
         distance = self._get_distance(self.base_proj, vel_target)
 
