@@ -93,7 +93,7 @@ def generate_spline():
                 speeds_loop[i+1], 
                 speeds_loop[i+2],
                 speeds_loop[i+3],
-                num_points=50
+                num_points=10
             )
             
             x_spline.extend(points[:, 0])

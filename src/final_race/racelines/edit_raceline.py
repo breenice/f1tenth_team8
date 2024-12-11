@@ -96,7 +96,7 @@ fig, ax = plt.subplots(figsize=(12, 8))
 ax.set_aspect('equal')
 
 # Load initial raceline
-load_raceline('mindist.csv')
+load_raceline('drawn_line.csv')
 
 # Initial visualization
 ax.set_title('Left/Right: Select point, Up/Down: Adjust speed, s: Save')
