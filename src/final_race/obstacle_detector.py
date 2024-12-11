@@ -35,8 +35,24 @@ class ObstacleDetector:
         if self.current_pose is None:
             return
         
+        # Filter scan to only include points between 30 and 150 degrees
+        filtered_scan = LaserScan()
+        filtered_scan.header = scan.header
+        filtered_scan.angle_min = 30 * math.pi/180
+        filtered_scan.angle_max = 150 * math.pi/180
+        filtered_scan.angle_increment = scan.angle_increment
+        filtered_scan.time_increment = scan.time_increment
+        filtered_scan.scan_time = scan.scan_time
+        filtered_scan.range_min = scan.range_min
+        filtered_scan.range_max = scan.range_max
+        
+        angle_min = -(scan.angle_min % math.pi)
+        start_idx = int((math.radians(30) - angle_min) / scan.angle_increment)
+        end_idx = int((math.radians(150) - angle_min) / scan.angle_increment)
+        filtered_scan.ranges = scan.ranges[start_idx:end_idx]
+        
         projector = LaserProjection()
-        point_cloud = projector.projectLaser(scan)
+        point_cloud = projector.projectLaser(filtered_scan)
 
         x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
         transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
