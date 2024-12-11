@@ -54,8 +54,7 @@ class PurePursuit:
         """
         Function to construct the path from a CSV file
         """
-        self.raceline_merchant.construct_path(trajectory_name, publish=True)
-        self.plan = self.raceline_merchant.plan
+        self.plan = self.raceline_merchant.construct_path(trajectory_name, publish=True)
         self.speed_plan = self.raceline_merchant.speed_plan
 
     def pure_pursuit(self, odom_x, odom_y, heading):

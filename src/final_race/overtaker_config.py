@@ -15,10 +15,10 @@ class Sectors:
 RACELINES = ["mincurve", "mindist_boundary", "mindist", "mincurve", "demoline"]
 
 # Racelines in the order the overtaker can choose between
-RACELINES_IN_ORDER = ["mincurve"]
+RACELINES_IN_ORDER = ["mincurve", "mindist", "center", "wide"]
 
 OBSTACLE_WINDOW = 10
 RACELINE_LOOKAHEAD = 2.0
-SAFETY_DISTANCE = 0.2
+SAFETY_DISTANCE = 0.1
 
 CC_DISTANCE = 1.5
