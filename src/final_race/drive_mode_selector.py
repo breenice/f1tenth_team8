@@ -30,6 +30,8 @@ class DriveModeSelector:
 
     # set mode
     def __init__(self):
+        self.obstacle_detector = ObstacleDetector()
+
         self.drive_mode_pub = rospy.Publisher('/{}/drive_mode'.format(CAR_NAME), Int32, queue_size=1)
         self.raceline_pub = rospy.Publisher('/{}/select_raceline'.format(CAR_NAME), String, queue_size=1)
         self.drive_mult_pub = rospy.Publisher('/{}/speed_mult'.format(CAR_NAME), Float32, queue_size=1)
@@ -41,7 +43,6 @@ class DriveModeSelector:
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), 
                         PoseStamped, self.pose_callback)
         
-        self.obstacle_detector = ObstacleDetector()
         self.raceline_merchant = RacelineMerchant()
         self.counter = 0
         self.every = 1
@@ -64,9 +65,13 @@ class DriveModeSelector:
 
         raceline = None
         for raceline_name in RACELINES_IN_ORDER:
-            raceline_points = self.raceline_merchant.construct_raceline(raceline_name)
+            raceline_points = self.raceline_merchant.construct_path(raceline_name)
             if self.is_path_clear(raceline_points, obstacles):
                 raceline = raceline_name
+                break
+
+        print("raceline:", raceline)
+
 
         if self.current_sector == Sectors.FREE and raceline is not None:
             self.set_raceline(raceline)
@@ -249,4 +254,4 @@ class DriveModeSelector:
         if raceline not in RACELINES:
             raise ValueError("Invalid raceline")
         self.set_mode_pp()
-        self.raceline_pub.publish(raceline)
+        self.raceline_pub.publish(raceline, publish=True)

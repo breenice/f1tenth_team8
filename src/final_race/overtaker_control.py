@@ -22,10 +22,10 @@ class OvertakerControl:
         self.current_speed_mult = 1.0
         self.target_speed_mult = 1.0
 
-        rospy.Subscriber('/{}/speed_mult'.format(CAR_NAME), Float32, self.cc_mult_callback)
+        rospy.Subscriber('/{}/speed_mult'.format(CAR_NAME), Float32, self.speed_mult_callback)
 
     def set_raceline(self, raceline):
-        self.pp_control.select_raceline(raceline)
+        self.pp_control.select_raceline(raceline.data)
 
     def set_drive_mode(self, msg):
         self.drive_mode = msg.data
@@ -45,7 +45,7 @@ class OvertakerControl:
 
             self.target_speed = speed
             self.publish_command(steering_angle)
-            print("steering:", steering_angle, "speed:", speed)
+            # print("steering:", steering_angle, "speed:", speed)
 
     def get_speed(self):
         if self.target_speed_mult < self.current_speed_mult:
@@ -53,6 +53,7 @@ class OvertakerControl:
         else:
             self.current_speed_mult = self.target_speed_mult
         
+        print("speed_mult:", self.current_speed_mult)
         return self.target_speed * self.current_speed_mult
 
     def publish_command(self, steering_angle):

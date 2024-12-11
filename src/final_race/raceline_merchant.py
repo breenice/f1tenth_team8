@@ -26,10 +26,11 @@ class RacelineMerchant:
         """
         Function to construct the path from a CSV file. Uses caching to avoid re-reading files.
         """
-        if trajectory_name in self._cache:
-            self.plan = self._cache[trajectory_name]
-            self.publish_raceline()
-            return
+        if trajectory_name in RacelineMerchant._cache:
+            self.plan = RacelineMerchant._cache[trajectory_name]
+            if publish:
+                self.publish_raceline()
+            return self.plan
 
         self.plan = []
         self.speed_plan = []
@@ -58,6 +59,7 @@ class RacelineMerchant:
         # Publish the new raceline
         if publish:
             self.publish_raceline()
+        return self.plan
 
     def publish_raceline(self):
         """

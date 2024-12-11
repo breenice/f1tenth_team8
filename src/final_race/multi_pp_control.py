@@ -17,6 +17,7 @@ STEERING_RANGE = 100.0
 class MultiPPControl:
     def __init__(self):
         self.racelines = RACELINES
+        self.current_raceline = None
 
         self.pp_visualizer = PPVisualizer()
 
@@ -27,10 +28,14 @@ class MultiPPControl:
         if raceline not in self.racelines:
             rospy.logerr("Invalid raceline: {}".format(raceline))
             return
+        
+        if raceline == self.current_raceline:
+            return
 
-        rospy.loginfo("Switching to raceline: {}".format(raceline))
+        # rospy.loginfo("Switching to raceline: {}".format(raceline))
         self.pp.construct_path(raceline)
-        rospy.loginfo("Switching to raceline: {} complete".format(raceline))
+        self.current_raceline = raceline
+        # rospy.loginfo("Switching to raceline: {} complete".format(raceline))
 
     def pp_control(self, data):
         # Obtain the current position of the race car from the inferred_pose message
