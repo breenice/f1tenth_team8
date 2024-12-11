@@ -22,11 +22,11 @@ sec_names = {
 
 class GetSectors():
     def __init__(self):
+        self.raceline_merchant = RacelineMerchant()
+        self.plan = self.construct_path()
+
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), PoseStamped,self.mpp_control)
         self.command_pub = rospy.Publisher('/{}/sector'.format(CAR_NAME), Int32, queue_size=1)
-        self.raceline_merchant = RacelineMerchant()
-
-        self.plan = self.construct_path()
 
 
     def construct_path(self):
@@ -41,7 +41,7 @@ class GetSectors():
             csv_reader = csv.reader(csv_file, delimiter=',')
             self.sec_dict = {}
             for start, sector in csv_reader:
-                self.sec_dict[start] = sector
+                self.sec_dict[int(start)] = sector
 
         self.raceline_merchant.construct_path("mindist")
 
@@ -54,19 +54,9 @@ class GetSectors():
 
     def get_sector(self):
         self.get_closest_idx()
-
-        for start, sector in self.sec_csv:
-            if self.closest_idx >= int(start):
-                mapped_type = sec_names["int"]
-                val = mapped_type(sector) 
-                self.sector = val
-
-        print(val)
-                
-        for start, sector in self.sect_dict:
+        for start, sector in self.sec_dict.items():
                 if self.closest_idx >= int(start):
-                    mapped_type = sec_names["int"]
-                    val = mapped_type(sector) 
+                    val = sec_names[sector]
                     self.sector = val
 
         self.publish_command()
@@ -92,5 +82,4 @@ class GetSectors():
     def publish_command(self):
         command = Sectors()
         command = self.sector
-        print(self.sector)
         self.command_pub.publish(command)

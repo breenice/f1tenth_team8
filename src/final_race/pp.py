@@ -37,7 +37,7 @@ class PurePursuit:
         rospy.Subscriber('/{}/sector'.format(CAR_NAME), Int32, self.set_sector)
 
     def set_sector(self, data):
-        self.sector = data
+        self.sector = data.data
 
     def construct_path(self, trajectory_name):
         """

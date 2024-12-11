@@ -10,7 +10,7 @@ if __name__ == "__main__":
     try:
         rospy.init_node("overtaker", anonymous=True)
         overtaker = OvertakerControl()
-        dms = DriveModeSelector()
+        # dms = DriveModeSelector()
         sector = GetSectors()
         rospy.spin()
     except rospy.ROSInterruptException:
