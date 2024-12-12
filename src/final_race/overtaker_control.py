@@ -49,7 +49,7 @@ class OvertakerControl:
 
     def get_speed(self):
         if self.target_speed_mult < self.current_speed_mult:
-            self.current_speed_mult = max(self.target_speed_mult, self.current_speed_mult - 0.01)
+            self.current_speed_mult = max(self.target_speed_mult, self.current_speed_mult - 0.1)
         else:
             self.current_speed_mult = self.target_speed_mult
         

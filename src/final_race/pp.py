@@ -17,6 +17,7 @@ class PurePursuit:
         self.lookahead_distance = lookahead_distance
         self.velo_lookahead_distance = 0
         self.sector_velo_mult = 0
+        self.steering_angle = STEERING_MULTIPLIER
         self.min_speed = min_speed
         self.max_speed = max_speed
 
@@ -34,6 +35,9 @@ class PurePursuit:
         self.sector = None
         rospy.Subscriber('/{}/sector'.format(CAR_NAME), Int32, self.set_sector)
 
+        self.current_steering_angle = 0
+        self.max_steering_change = MAX_STEERING_CHANGE
+
     def set_sector(self, data):
         self.sector = data.data
 
@@ -41,14 +45,20 @@ class PurePursuit:
             self.lookahead_distance = FREE_LOOKAHEAD
             self.velo_lookahead_distance = 2 * FREE_LOOKAHEAD
             self.sector_velo_mult = FREE_VELO_MULT
+            self.steering_angle = STEERING_MULTIPLIER  + 0.5
+            self.max_steering_change = MAX_STEERING_CHANGE - 4
         elif self.sector == Sectors.MID:
             self.lookahead_distance = MID_LOOKAHEAD
             self.velo_lookahead_distance = 2 * MID_LOOKAHEAD
             self.sector_velo_mult = MID_VELO_MULT
+            self.steering_angle = STEERING_MULTIPLIER - 0.5
+            self.max_steering_change = MAX_STEERING_CHANGE
         elif self.sector == Sectors.DANGER:
             self.lookahead_distance = DANGER_LOOKAHEAD
             self.velo_lookahead_distance = 2 * DANGER_LOOKAHEAD
             self.sector_velo_mult = DANGER_VELO_MULT
+            self.steering_angle = STEERING_MULTIPLIER - 0.5
+            self.max_steering_change = MAX_STEERING_CHANGE + 4
 
     def construct_path(self, trajectory_name):
         """
@@ -104,7 +114,20 @@ class PurePursuit:
         steering_angle = math.atan(2 * WHEELBASE_LEN * math.sin(alpha)/ 1.2)
         steering_angle = math.degrees(steering_angle)
         # print("Alpha:", alpha, "Steering Angle:", steering_angle)
-        return steering_angle
+        target_steering_angle = steering_angle * self.steering_angle
+        if target_steering_angle > self.current_steering_angle:
+            if target_steering_angle > self.current_steering_angle + MAX_STEERING_CHANGE:
+                self.current_steering_angle = self.current_steering_angle + MAX_STEERING_CHANGE
+            else:
+                self.current_steering_angle = target_steering_angle
+        else:
+            if target_steering_angle < self.current_steering_angle - MAX_STEERING_CHANGE:
+                self.current_steering_angle = self.current_steering_angle - MAX_STEERING_CHANGE
+            else:
+                self.current_steering_angle = target_steering_angle
+
+        return self.current_steering_angle
+
 
     def get_dynamic_velo(self):
         # # Dynamic speed based on further lookahead point

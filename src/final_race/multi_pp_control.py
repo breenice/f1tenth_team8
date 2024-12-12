@@ -57,7 +57,6 @@ class MultiPPControl:
         command = AckermannDrive()
 
         # Scale, check within range, and then assign
-        steering_angle *= STEERING_MULTIPLIER
         steering_angle = max(-STEERING_RANGE, min(STEERING_RANGE, steering_angle))
         command.steering_angle = steering_angle
         command.speed = self.pp.get_dynamic_velo()

@@ -52,7 +52,7 @@ class ObstacleDetector:
         filtered_scan.ranges = scan.ranges[start_idx:end_idx]
         
         projector = LaserProjection()
-        point_cloud = projector.projectLaser(filtered_scan)
+        point_cloud = projector.projectLaser(scan)
 
         x_r, y_r = self.current_pose.position.x, self.current_pose.position.y
         transform_stamped = self.make_transform(x_r, y_r, self.current_pose.orientation)
@@ -67,12 +67,12 @@ class ObstacleDetector:
 
         global_points = []
         for x, y in point_generator:
-            global_points.append((y, x))
+            global_points.append((x, y))
 
         obstacle_points = []
         for px, py in global_points:
-            map_x = int((py - self.origin_x) / self.resolution)
-            map_y = self.map.shape[0] - int((px - self.origin_y) / self.resolution)
+            map_x = int((px - self.origin_x) / self.resolution)
+            map_y = self.map.shape[0] - int((py - self.origin_y) / self.resolution)
             if not self.is_wall(map_x, map_y):
                 obstacle_points.append((px, py))
 
@@ -103,7 +103,7 @@ class ObstacleDetector:
 
         points = []
         for px, py in obstacle_points:
-            points.append([py, px, 0.0])
+            points.append([px, py, 0.0])
 
         pc2 = create_cloud_xyz32(header, points)
         self.obstacle_pub.publish(pc2)
