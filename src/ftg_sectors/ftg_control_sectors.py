@@ -14,6 +14,7 @@ from geometry_msgs.msg import Point
 from disparity_extension import DisparityExtender
 from gap_finder import GapFinder
 from ftg_config import *
+from get_sectors import GetSectors
 
 
 class FTGControl:
@@ -102,7 +103,7 @@ class FTGControl:
         # #command.speed = self.dynamic_velocity(steering_angle)
 
         # set speed for no gaps dtected for car to slow down or to defult
-        command.speed = min(self.prev_speed + 5, speed)
+        command.speed = min(self.prev_speed + 500, speed)
         self.prev_speed = command.speed
 
         # publish drive command
@@ -240,4 +241,5 @@ if __name__ == '__main__':
     """
     rospy.init_node('follow_gap', anonymous=True)
     FTGControl()
+    GetSectors()
     rospy.spin()

@@ -1,6 +1,6 @@
 ON_CAR = False
-MODE_INT = 1 # ["TIME_TRIAL", "OVERTAKE"]
-SPEED_MODE_INT = 0 # ["FAST", "MEDIUM"], choose between sectors/speed_sectors TODO: add choosing pp config too
+MODE_INT = 0 # ["TIME_TRIAL", "OVERTAKE"]
+SPEED_MODE_INT = 1 # ["FAST", "MEDIUM"], choose between sectors/speed_sectors TODO: add choosing pp config too
 
 CAR_NAME = "car_8"
 
@@ -24,7 +24,7 @@ RACELINES_IN_ORDER = ["mincurve"]
 
 OBSTACLE_WINDOW = 10
 RACELINE_LOOKAHEAD = 3.0
-SAFETY_DISTANCE = 0.3
+SAFETY_DISTANCE = 0.4
 
 POINT_GROUP_DISTANCE = 0.1
 MIN_POINT_GROUP_SIZE = 5
