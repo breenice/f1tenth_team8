@@ -16,11 +16,6 @@ from sensor_msgs.point_cloud2 import read_points, create_cloud_xyz32
 from obstacle_detector import ObstacleDetector
 from raceline_merchant import RacelineMerchant
 
-# from now viewing gaps
-#from ftg_config import MAX_LIDAR_DISTANCE, MAXIMUM_SPEED
-#from ftg_raceline_control import FTGRacelineControl
-#
-
 # Map metadata from the YAML file
 origin_x, origin_y = -6.977912, -3.423147  # Origin of the map
 resolution = 0.025000  # Resolution of the map
@@ -46,10 +41,6 @@ class DriveModeSelector:
         self.raceline_merchant = RacelineMerchant()
         self.counter = 0
         self.every = 1
-        
-        # from now viewing gaps
-        # self.ftg_raceline_control = FTGRacelineControl()
-        #
 
         self.origin_x, self.origin_y = -6.977912, -3.423147  # Origin of the map
 
@@ -164,27 +155,6 @@ class DriveModeSelector:
             
         return min_distance
 
-
-        # from now viewing gaps
-        # get the index of the closest object in the scan between 30 and 150 degrees
-        #angle_min = -(data.angle_min % math.pi)
-        #ranges = np.array(data.ranges)
-        
-        # Convert angles to indices
-        #angle_30 = int((math.radians(30) - angle_min) / data.angle_increment)
-        #angle_150 = int((math.radians(150) - angle_min) / data.angle_increment)
-        
-        # Get ranges between 30 and 150 degrees
-        #front_ranges = ranges[angle_30:angle_150]
-        
-        # Replace inf, nan and small values with max range
-        #front_ranges = np.where(np.isnan(front_ranges), MAX_LIDAR_DISTANCE, front_ranges)
-        #front_ranges = np.where(np.isinf(front_ranges), MAX_LIDAR_DISTANCE, front_ranges)
-        #front_ranges[front_ranges < 0.05] = MAX_LIDAR_DISTANCE
-        
-        # Return minimum distance
-        #return np.min(front_ranges)
-        #
         
     def set_mode_pp(self):
         self.drive_mode_pub.publish(DriveMode.PP)
