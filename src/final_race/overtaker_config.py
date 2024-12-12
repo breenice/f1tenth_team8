@@ -1,7 +1,5 @@
-import rospy
-
 ON_CAR = False
-MODE_INT = 1 if rospy.get_param("~check_others", default=True) else 0 # ["TIME_TRIAL", "OVERTAKE"]
+MODE_INT = 1 # ["TIME_TRIAL", "OVERTAKE"]
 SPEED_MODE_INT = 1 # ["FAST", "MEDIUM"], choose between sectors/speed_sectors TODO: add choosing pp config too
 
 CAR_NAME = "car_8"
