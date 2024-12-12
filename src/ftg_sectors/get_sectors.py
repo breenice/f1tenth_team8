@@ -42,7 +42,7 @@ class GetSectors():
         """
 
         file_path = os.path.expanduser(
-            '{}/{}.csv'.format(PATH_FOLDER, "sectors"))
+            '{}/{}.csv'.format(PATH_FOLDER, "ftg_sectors"))
 
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')

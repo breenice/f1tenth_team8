@@ -30,6 +30,6 @@ def sector_callback(msg):
     elif sector == Sectors.MID:
         MAXIMUM_SPEED = 70
     elif sector == Sectors.DANGER:
-        MAXIMUM_SPEED = 40
+        MAXIMUM_SPEED = 30
 
 rospy.Subscriber('/car_8/sector', Int32, sector_callback)

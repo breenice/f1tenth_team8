@@ -1,3 +1,7 @@
 <launch>
-    <node pkg="race" type="overtaker.py" name="overtaker" output="screen"/>  
+    <arg name="check_others" default="true"/>
+    <node pkg="race" type="overtaker.py" name="overtaker" output="screen"> 
+        <param name="check_others" value="$(arg check_others)"/>
+    </node>
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find race)/pp_config.rviz"/> 
 </launch>
