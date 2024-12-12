@@ -12,7 +12,7 @@ scatter = None
 # Sector mapping: indices to sector types
 sectors = [
     (0,"DANGER"),
-    (3,"FREE"),
+    (1,"FREE"),
     (15,"MID"),
     (21,"FREE"),
     (32,"MID"),
