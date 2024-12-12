@@ -8,6 +8,6 @@ SAFETY_EXTENSION = 25
 
 GAP_SELECTION = "best" # least_steering, widest, deepest, largest_integral
 POINT_SELECTION = "best" # lear_steering, middle, deepest
-MIN_GAP_SIZE = 10
+MIN_GAP_SIZE = 15
 MIN_GAP_DISTANCE = 1
 CORNERING_DISTANCE = 0.28

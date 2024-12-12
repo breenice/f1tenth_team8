@@ -5,7 +5,7 @@ from geometry_msgs.msg import Point32
 from geometry_msgs.msg import PolygonStamped
 from overtaker_config import *
 
-PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'
+PATH_FOLDER = '/home/{}/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'.format(PATH_FOLDER)
 
 class RacelineMerchant:
     _instance = None

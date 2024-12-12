@@ -8,7 +8,7 @@ from std_msgs.msg import Int32, String
 from overtaker_config import *
 from raceline_merchant import RacelineMerchant
 
-PATH_FOLDER = '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'
+PATH_FOLDER = '/home/{}/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/racelines'.format(PATH_FOLDER)
 
 sec_names = {
     "FREE": Sectors.FREE,
@@ -35,9 +35,10 @@ class GetSectors():
         """
         Function to construct the path from a CSV file
         """
+        sector_csv_name = "speed_sectors" if SPEED_MODE == "FAST" else "sectors"
 
         file_path = os.path.expanduser(
-            '{}/{}.csv'.format(PATH_FOLDER, "sectors"))
+            '{}/{}.csv'.format(PATH_FOLDER, sector_csv_name))
 
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')

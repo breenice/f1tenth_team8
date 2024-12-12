@@ -32,7 +32,7 @@ class DriveModeSelector:
         self.drive_mult_pub = rospy.Publisher('/{}/speed_mult'.format(CAR_NAME), Float32, queue_size=1)
         self.obstacle_pub = rospy.Publisher('/{}/obstacles'.format(CAR_NAME), PointCloud2, queue_size=1)
         
-        self.map = cv2.imread("/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm", cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.imread("/home/{}/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm".format(PATH_FOLDER), cv2.IMREAD_GRAYSCALE)
         
         self.current_pose = None
         rospy.Subscriber('/{}/particle_filter/viz/inferred_pose'.format(CAR_NAME), 
@@ -98,6 +98,7 @@ class DriveModeSelector:
 
         total_dist = 0
         idx = self.get_closest_idx(self.current_pose,raceline_points) #starts at closest point
+        idx -= 4
 
         prev_point = raceline_points[idx]
 

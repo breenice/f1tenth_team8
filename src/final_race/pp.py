@@ -45,20 +45,20 @@ class PurePursuit:
             self.lookahead_distance = FREE_LOOKAHEAD
             self.velo_lookahead_distance = 2 * FREE_LOOKAHEAD
             self.sector_velo_mult = FREE_VELO_MULT
-            self.steering_angle = STEERING_MULTIPLIER  + 0.5
+            self.steering_angle = STEERING_MULTIPLIER + 0.5
             self.max_steering_change = MAX_STEERING_CHANGE - 4
         elif self.sector == Sectors.MID:
             self.lookahead_distance = MID_LOOKAHEAD
             self.velo_lookahead_distance = 2 * MID_LOOKAHEAD
             self.sector_velo_mult = MID_VELO_MULT
             self.steering_angle = STEERING_MULTIPLIER - 0.5
-            self.max_steering_change = MAX_STEERING_CHANGE
+            self.max_steering_change = MAX_STEERING_CHANGE - 1
         elif self.sector == Sectors.DANGER:
             self.lookahead_distance = DANGER_LOOKAHEAD
             self.velo_lookahead_distance = 2 * DANGER_LOOKAHEAD
             self.sector_velo_mult = DANGER_VELO_MULT
             self.steering_angle = STEERING_MULTIPLIER - 0.5
-            self.max_steering_change = MAX_STEERING_CHANGE + 4
+            self.max_steering_change = 200
 
     def construct_path(self, trajectory_name):
         """

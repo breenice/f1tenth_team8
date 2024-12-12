@@ -4,10 +4,7 @@ import rospy
 from overtaker_control import OvertakerControl
 from drive_mode_selector import DriveModeSelector
 from get_sectors import GetSectors
-
-MODES = ["TIME_TRIAL", "OVERTAKE"]
-MODE = MODES[1]
-
+from overtaker_config import *
 
 if __name__ == "__main__":
     try:

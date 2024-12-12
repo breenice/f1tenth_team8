@@ -35,19 +35,17 @@ class FTGControl:
         ranges = self.disparity_extender.extend_disparities(ranges, data.angle_increment)
         self.ranges = ranges
         # find largest gap and select the best point from that gap
-        try:
-            self.gap_finder.update_data(ranges, data)
-            start_i, end_i = self.gap_finder.get_gap()
-            best_point = self.gap_finder.get_point(start_i, end_i)
-            # best_point = self.gap_finder.get_point_to_go_to(data) # This does the same as above, but in one line
-            # calculate steering angle towards best point
-            steering_angle = self.get_steering_angle(best_point, data)
-            speed = self.dynamic_velocity(steering_angle)
-            # publish
-            ret = self.publish_drive(speed, steering_angle)
-            self.ftg_visualizer.publish_gap_points(data, start_i, end_i)
-        except:
-            ret = self.publish_drive(0, 0)
+        self.gap_finder.update_data(ranges, data)
+        gap = self.gap_finder.get_gap()
+        start_i, end_i = gap
+        best_point = self.gap_finder.get_point(start_i, end_i)
+        # best_point = self.gap_finder.get_point_to_go_to(data) # This does the same as above, but in one line
+        # calculate steering angle towards best point
+        steering_angle = self.get_steering_angle(best_point, data)
+        speed = self.dynamic_velocity(steering_angle)
+        # publish
+        ret = self.publish_drive(speed, steering_angle)
+        self.ftg_visualizer.publish_gap_points(data, start_i, end_i)
         
         self.ftg_visualizer.publish_lidar(data, ranges)
         return ret

@@ -4,6 +4,7 @@ import os
 import csv
 import math
 from pp_config import *
+from overtaker_config import PATH_FOLDER
 
 WHEELBASE_LEN = 0.325
 
@@ -32,7 +33,7 @@ class PurePursuit:
 
         # TODO: Modify this path to match the folder where the csv file containing the path is located.
         file_path = os.path.expanduser(
-            '/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/pure_pursuit/{}.csv'.format(trajectory_name))
+            '/home/{}/depend_ws/src/F1tenth_car_workspace/wallfollow/src/pure_pursuit/{}.csv'.format(PATH_FOLDER, trajectory_name))
 
         with open(file_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')

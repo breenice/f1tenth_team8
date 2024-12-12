@@ -15,7 +15,7 @@ from overtaker_config import *
 class ObstacleDetector:
     def __init__(self):
         self.obstacle_pub = rospy.Publisher('/{}/obstacles'.format(CAR_NAME), PointCloud2, queue_size=1)
-        self.map = cv2.imread("/home/volta/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm", cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.imread("/home/{}/depend_ws/src/F1tenth_car_workspace/wallfollow/src/final_race/map/base_map.pgm".format(PATH_FOLDER), cv2.IMREAD_GRAYSCALE)
         
         # Map metadata from the YAML file
         self.origin_x, self.origin_y = -6.977912, -3.423147  # Origin of the map
@@ -89,7 +89,7 @@ class ObstacleDetector:
                             filtered_obstacles.append(p1)
                             break
 
-        self.visualize_obstacles(filtered_obstacles)
+        # self.visualize_obstacles(filtered_obstacles)
         self.obstacle_points = filtered_obstacles
 
     def make_transform(self, x, y, rot):
