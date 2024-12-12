@@ -47,6 +47,19 @@ class OvertakerControl:
             self.publish_command(steering_angle)
             # print("steering:", steering_angle, "speed:", speed)
 
+    def init_ftg(self):
+        rospy.Subscriber("/car_8/scan", LaserScan, self.ftg_control)
+
+    def ftg_control(self, data):
+        if self.drive_mode == DriveMode.FTG:
+            command = self.ftg_control.ftg_control(data)
+            steering_angle = command.steering_angle
+            speed = command.speed
+
+            self.target_speed = speed
+            self.publish_command(steering_angle)
+
+
     def get_speed(self):
         if self.target_speed_mult < self.current_speed_mult:
             self.current_speed_mult = max(self.target_speed_mult, self.current_speed_mult - 0.1)

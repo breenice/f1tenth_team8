@@ -76,8 +76,21 @@ class ObstacleDetector:
             if not self.is_wall(map_x, map_y):
                 obstacle_points.append((px, py))
 
-        self.visualize_obstacles(obstacle_points)
-        self.obstacle_points = obstacle_points
+        # Then filter points that don't have enough neighbors
+        filtered_obstacles = []
+        for p1 in obstacle_points:
+            neighbor_count = 0
+            for p2 in obstacle_points:
+                if p1 != p2:
+                    dist = math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+                    if dist < POINT_GROUP_DISTANCE:
+                        neighbor_count += 1
+                        if neighbor_count >= MIN_POINT_GROUP_SIZE:
+                            filtered_obstacles.append(p1)
+                            break
+
+        self.visualize_obstacles(filtered_obstacles)
+        self.obstacle_points = filtered_obstacles
 
     def make_transform(self, x, y, rot):
         trans = TransformStamped()

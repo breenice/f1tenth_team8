@@ -66,11 +66,11 @@ class DriveModeSelector:
 
         print("raceline:", raceline)
 
-        if self.current_sector == Sectors.FREE and raceline is not None:
+        if raceline is not None:
             self.set_raceline(raceline)
         else:
-            print("setting to cc")
-            self.set_mode_cc()
+            print("setting to ftg")
+            self.set_mode_ftg()
 
     def _get_distance(self, p1, p2):
         x,y = p1.position.x, p1.position.y
@@ -155,6 +155,8 @@ class DriveModeSelector:
             
         return min_distance
 
+    def set_mode_ftg(self):
+        self.drive_mode_pub.publish(DriveMode.FTG)
         
     def set_mode_pp(self):
         self.drive_mode_pub.publish(DriveMode.PP)
