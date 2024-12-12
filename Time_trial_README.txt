@@ -1,3 +1,5 @@
-run with:
+Inside src/final_race/overtaker_config.py
+set MODE_INT = 0
 
-timed_final.launch
+Then run
+final.launch
